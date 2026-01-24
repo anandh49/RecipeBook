@@ -14,20 +14,51 @@ app.jinja_loader = ChoiceLoader([
     FileSystemLoader(os.path.abspath("main_files"))
 ])
 
+import os
+
 app.secret_key = "recipebook"
-app.config['MYSQL_HOST'] = 'localhost'  
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'smith49'  
-app.config['MYSQL_DB'] = 'userdb' 
+
+# Check if we are running on PythonAnywhere by looking for a specific folder
+if 'PYTHONANYWHERE_DOMAIN' in os.environ:
+    # --- WE ARE ON THE SERVER (PythonAnywhere) ---
+    
+    # Configuration for User Database
+    app.config['MYSQL_HOST'] = 'anandh49.mysql.pythonanywhere-services.com'  # Find this in the "Databases" tab
+    app.config['MYSQL_USER'] = 'anandh49'                                   # Your PythonAnywhere username
+    app.config['MYSQL_PASSWORD'] = 'YOUR_DB_PASSWORD'                         # The password you set in the "Databases" tab
+    app.config['MYSQL_DB'] = 'anandh49$userdb'                                # Format is: username$dbname
+    
+    # Configuration for Recipe Database
+    config1 = {
+        "host": "anandh49.mysql.pythonanywhere-services.com",
+        "user": "anandh49",
+        "password": "YOUR_DB_PASSWORD",
+        "database": "anandh49$recipes"
+    }
+
+else:
+    # --- WE ARE ON YOUR LAPTOP (Localhost) ---
+    
+    # Configuration for User Database
+    app.config['MYSQL_HOST'] = 'localhost'  
+    app.config['MYSQL_USER'] = 'root'
+    app.config['MYSQL_PASSWORD'] = 'smith49'  
+    app.config['MYSQL_DB'] = 'userdb' 
+    
+    # Configuration for Recipe Database
+    config1 = {
+        "host": "localhost",
+        "user": "root",
+        "password": "smith49",
+        "database": "recipes"
+    }
+
+# Initialize Connections (works for both now)
 mysql = MySQL(app)
- 
-config1 = {
-    "host": "localhost",
-    "user": "root",
-    "password": "smith49",
-    "database": "recipes"
-}
 db = MySQLConnection(**config1)
+cursor = db.cursor()
+db.commit()
+
 cursor = db.cursor()
 db.commit()
 
