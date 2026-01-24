@@ -1,13 +1,13 @@
--- MySQL dump 10.13  Distrib 8.0.38, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
 --
 -- Host: localhost    Database: userdb
 -- ------------------------------------------------------
--- Server version	8.0.39
+-- Server version	8.0.44
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8 */;
+/*!50503 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -29,7 +29,7 @@ CREATE TABLE `comments` (
   `username` varchar(45) NOT NULL,
   `timestamp` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -60,7 +60,7 @@ CREATE TABLE `liked_recipes` (
 
 LOCK TABLES `liked_recipes` WRITE;
 /*!40000 ALTER TABLE `liked_recipes` DISABLE KEYS */;
-INSERT INTO `liked_recipes` VALUES ('Chicken biryani','AAA');
+INSERT INTO `liked_recipes` VALUES ('Chicken biryani','AAA'),('Chocolate cake','xen4os');
 /*!40000 ALTER TABLE `liked_recipes` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -79,7 +79,7 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `email_UNIQUE` (`email`),
   UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -88,7 +88,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'test1','$2b$12$q9ZoWrVOTDixlKx0fPycO.F3rKa9ik/ah6twNXJce7GnX0bWkPPMG','exynosbt@gmail.com'),(5,'admin','$2b$12$.Ea9w0Adxtu/L4NJuT6Mvu5UHCiDiXlvwm10BwANyH5mkZc25P9Sm','anandh.cse22@mbits.ac.in'),(8,'smith','$2b$12$/yEwhPKX3ELfszy9RZMtye6eCNch.3b0H.hIwLti9FTCd/CT/hGzK','anandhdas8888@gmail.com'),(9,'AAA','$2b$12$MORPAoSH1cim7mnPIBWGDeuhMQ9b9nC4U0hSqmM7d1Khv8aEdls7m','aaa@gmail.com');
+INSERT INTO `users` VALUES (1,'admin','t1','myadmin@gmail.com');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -101,4 +101,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-04-10 14:12:08
+-- Dump completed on 2026-01-24  9:48:05
