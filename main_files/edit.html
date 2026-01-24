@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Recipe</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap">
+    <style>
+        :root {
+            font-size: 125%;
+        }
+        *, *:before, *:after {
+            box-sizing: border-box;
+        }
+        body {
+            font: 1em/1.618 Inter, sans-serif;
+            margin: 0;
+            color: #224;
+            background: url(https://i.ibb.co/Qjt7TJn/milad-fakurian-E8-Ufcyxz514-unsplash-1.jpg) center / cover no-repeat fixed;
+        }
+        .site-container {
+            display: grid;
+            place-items: center;
+            min-height: 100vh;
+            padding: 1.5em;
+        }
+        .card {
+            width: 700px;
+            max-width: 700px;
+            padding: 35px;
+            border: 1px solid rgba(255, 255, 255, .25);
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.45);
+            box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(15px);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        label {
+            font-weight: 500;
+            margin-top: 10px;
+            display: block;
+            color: #555;
+            font-size: 14px;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fff;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+            transition: background 0.3s ease-in-out;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .logbut {
+    position: absolute; 
+}
+.logbut img {
+    position:absolute;  
+    margin-left:1455px;
+    top:42px;
+    width:30px;
+    height:auto;
+}
+    </style>
+</head>
+<body>
+    <div class="logbut">
+        <a href="{{ url_for('show_page', page='admin') }}">
+            <img src="{{ url_for('static', filename='images/logout-1024-removebg-preview.png') }}">
+          </a>
+        </div>
+    <div class="site-container">
+        <div class="card">
+            <h2>Edit Recipes</h2>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-messages {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% if not data %} 
+            <form action="/edit" method="POST">
+                <label for="filename">Select Recipe</label>
+                <select id="filename" name="filename">
+                    {% for file in files %}
+                        <option value="{{ file }}">{{ file }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit">Load Recipe</button>
+            </form>
+            {% else %}
+            <form action="/save" method="POST">
+                <input type="hidden" name="filename" value="{{ filename }}">
+                <label for="head">Heading</label>
+                <input type="text" id="head" name="head" value="{{ data.head }}">
+                <label for="image">Image Link</label>
+                <input type="text" id="image" name="image" value="{{ data.image }}">
+                <label for="description">Description</label>
+                <textarea id="description" name="description">{{ data.description }}</textarea>
+                <label for="ingredients">Ingredients</label>
+                <textarea id="ingredients" name="ingredients">{{ data.ingredients }}</textarea>
+                <label for="nutrition">Nutritional Items</label>
+                <textarea id="nutrition" name="nutrition">{{ data.nutrition }}</textarea>
+                <label for="fun">Fun Facts</label>
+                <textarea id="fun" name="fun">{{ data.fun }}</textarea>
+                <label for="instructions">Instructions</label>
+                <textarea id="instructions" name="instructions">{{ data.instructions }}</textarea>
+                <label for="tips">Tips & Tricks</label>
+                <textarea id="tips" name="tips">{{ data.tips }}</textarea>
+                <label for="video">Video Link</label>
+                <input type="text" id="video" name="video" value="{{ data.video }}">
+                <button type="submit">Save Changes</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+
+<title id="title">Red velvet cake</title>
+<html lang="en">
+<head>
+<link href="static/recipe.css" rel="stylesheet"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="" name="description"/>
+<meta content="" name="keywords"/>
+<!-- Favicons -->
+<link href="static/assets/img/favicon.png" rel="icon"/>
+<link href="static/assets/img/apple-touch-icon.png" rel="apple-touch-icon"/>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&amp;family=Inter:wght@100;200;300;400;500;600;700;800;900&amp;family=Amatic+SC:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<!-- Vendor CSS Files -->
+<link href="static/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="static/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet"/>
+<link href="static/assets/vendor/aos/aos.css" rel="stylesheet"/>
+<link href="static/assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet"/>
+<link href="static/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet"/>
+<!-- Font Awesome for search icon -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+<!-- Main CSS File -->
+<link href="static/assets/css/main.css" rel="stylesheet"/>
+</head>
+<body class="index-page">
+<header class="header d-flex align-items-center sticky-top" id="header">
+<div class="container position-relative d-flex align-items-center justify-content-between">
+<a class="logo d-flex align-items-center me-auto me-xl-0" href="index.html">
+<h1 class="sitename">The Recipe Book</h1>
+<span>.</span>
+</a>
+<nav class="navmenu" id="navmenu">
+<ul>
+<li><a class="active" href="#hero">Home<br/></a></li>
+<li><a href="#about">Ingredients</a></li>
+<li><a href="#menu">Instructions</a></li>
+<li><a href="#nutrition">Nutrition chart</a></li>
+<li><a>Add To Fav</a></li>
+<button id="like-button" onclick="likeRecipe()">
+<i class="far fa-heart"></i>
+</button>
+</ul>
+<i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+</nav>
+<!-- Search Container -->
+<div class="search-container" id="searchContainer">
+<div class="search">
+<form id="searchForm">
+<input id="searchInput" name="search" placeholder="Search recipes..." required="" type="text"/>
+<button type="submit">
+<div class="search-icon">
+<i class="fa-solid fa-magnifying-glass" style="color:white;"></i>
+</div>
+</button>
+</form>
+</div>
+</div>
+<!-- Book a Table Button (Now acts as the Search Button) -->
+<a class="btn-getstarted" id="searchButton">Search</a>
+<li> <a class="active" href="{{ url_for('show_page', page='main') }}"><img src="{{ url_for('static', filename='images/home.png') }}"/></a></li>
+</div>
+</header>
+<main class="main">
+<!-- Hero Section -->
+<section class="hero section light-background" id="hero">
+<div class="container">
+<div class="row gy-4 justify-content-center justify-content-lg-between">
+<div class="col-lg-5 order-2 order-lg-1 d-flex flex-column justify-content-center">
+<h1 data-aos="fade-up" id="head">Red velvet cake</h1>
+<p data-aos="fade-up" data-aos-delay="100" id="description">Red Velvet Cake is a classic dessert known for its striking deep red color, soft and velvety texture, and subtle cocoa flavor</p>
+<div class="d-flex" data-aos="fade-up" data-aos-delay="200">
+</div>
+</div>
+<div class="col-lg-5 order-1 order-lg-2 hero-img" data-aos="zoom-out">
+<img alt="" src="{{ url_for('static', filename='images/Red velvet cake.png') }}"/>
+</div>
+</div>
+</div>
+</section>
+<div class="meal-and-timer-container">
+<div class="timer-container">
+<svg class="timer-circle" viewbox="0 0 200 200">
+<circle class="timer-background" cx="100" cy="100" r="90"></circle>
+<circle class="timer-progress" cx="100" cy="100" r="90"></circle>
+</svg>
+<div class="timer-content">
+<div class="timer-text">80</div>
+<div class="dish-name">Min</div>
+</div>
+</div>
+<div class="meal-container">
+<div class="meal-card meal-Dessert" id="mealCard">
+<div class="meal-icon" id="mealIcon"></div>
+</div>
+<div class="meal-type-label" id="mealLabel">Dinner</div>
+</div>
+</div>
+<!-- About Section (Ingredients) -->
+<section class="about section" id="about">
+<div id="recommendations-container">
+<h3>Craving Something New?</h3>
+<div id="recommendations"></div>
+</div>
+<!-- Section Title -->
+<div class="container section-title" data-aos="fade-up">
+<h2>what you need<br/></h2>
+<p><span>Ingre</span> <span class="description-title">DIENTS</span></p>
+</div><!-- End Section Title -->
+<div class="container">
+<div class="row gy-4">
+<div class="col-lg-7" data-aos="fade-up" data-aos-delay="100">
+<div class="video-container">
+<img alt="" class="img-fluid mb-4" id="image" src="https://static01.nyt.com/images/2014/05/14/dining/14REDVELVET/14REDVELVET-superJumbo-v4.jpg"/>
+</div>
+</div>
+<div class="col-lg-5" data-aos="fade-up" data-aos-delay="250">
+<div class="content ps-0 ps-lg-5">
+<p class="fst-italic">
+                For the perfect Red velvet cake, you'll need these fresh ingredients:
+              </p>
+<ul id="ingredients" style="list-style-type: none;"><ul><li><i class="bi bi-check-circle-fill"></i> <span>For the Cake</span></li><li><i class="bi bi-check-circle-fill"></i> <span>2 and 1/2 cups all-purpose flour</span></li><li><i class="bi bi-check-circle-fill"></i> <span>1 and 1/2 cups granulated sugar</span></li><li><i class="bi bi-check-circle-fill"></i> <span>1 teaspoon baking soda</span></li><li><i class="bi bi-check-circle-fill"></i> <span>1 teaspoon salt</span></li><li><i class="bi bi-check-circle-fill"></i> <span>1 teaspoon cocoa powder</span></li><li><i class="bi bi-check-circle-fill"></i> <span>1 cup buttermilk</span></li><li><i class="bi bi-check-circle-fill"></i> <span>1 cup vegetable oil</span></li><li><i class="bi bi-check-circle-fill"></i> <span>2 eggs</span></li><li><i class="bi bi-check-circle-fill"></i> <span>2 teaspoons vanilla extract</span></li><li><i class="bi bi-check-circle-fill"></i> <span>1 teaspoon white vinegar</span></li><li><i class="bi bi-check-circle-fill"></i> <span>2 tablespoons red food coloring</span></li><li><i class="bi bi-check-circle-fill"></i> <span>For the Cream Cheese Frosting</span></li><li><i class="bi bi-check-circle-fill"></i> <span>8 ounces cream cheese (softened)</span></li><li><i class="bi bi-check-circle-fill"></i> <span>1/2 cup unsalted butter (softened)</span></li><li><i class="bi bi-check-circle-fill"></i> <span>2 cups powdered sugar</span></li><li><i class="bi bi-check-circle-fill"></i> <span>1 teaspoon vanilla extract</span></li></ul></ul>
+</div>
+</div>
+</div>
+<!-- Additional Sections (Fun Facts and Tips & Tricks) -->
+<div class="additional-sections row" data-aos="fade-up" data-aos-delay="300">
+<div class="col-md-6">
+<div class="additional-section">
+<h3>Fun Facts</h3>
+<ul id="fun" style="list-style-type: none;">The cake’s red color originally came from natural cocoa reacting with acidic ingredients like vinegar and buttermilk.During World War II, bakers used beet juice to enhance the red color due to food rationing.Red Velvet Cake became famous in the 20th century, largely thanks to its popularity in the American South.</ul>
+</div>
+</div>
+<div class="col-md-6">
+<div class="additional-section">
+<h3>Tips &amp; Tricks</h3>
+<ul id="tips" style="list-style-type: none;">Use natural cocoa powder instead of Dutch-processed cocoa for a better reaction with acidic ingredients.Do not overmix the batter, as it can lead to a dense cake.To get an extra moist cake, wrap the cake layers in plastic wrap and refrigerate for a few hours before frosting.</ul>
+</div>
+</div>
+</div>
+</div>
+</section><!-- /About Section -->
+<!-- Menu Section (Instructions) -->
+<section class="menu section" id="menu">
+<!-- Section Title -->
+<div class="container section-title" data-aos="fade-up">
+<h2>How to make it</h2>
+<p><span>Step-by-step</span> <span class="description-title">Instructions</span></p>
+</div><!-- End Section Title -->
+<div class="container">
+<div class="row gy-4">
+<div class="col-lg-6" data-aos="fade-up" data-aos-delay="100">
+<div class="content ps-0 ps-lg-5">
+<ol class="instruction-list" id="instructions"><ul><li><i class="bi bi-check-circle-fill"></i> <span>step 1: Prepare the Cake Batter</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Preheat oven to 350°F (175°C). Grease and flour two 9-inch round cake pans.</span></li><li><i class="bi bi-check-circle-fill"></i> <span>In a large bowl, sift together flour, sugar, baking soda, salt, and cocoa powder.</span></li><li><i class="bi bi-check-circle-fill"></i> <span>In another bowl, whisk together buttermilk, oil, eggs, vanilla extract, vinegar, and red food coloring.</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Gradually mix the wet ingredients into the dry ingredients until smooth and well combined.</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Step 2: Bake the Cake</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Divide the batter evenly between the prepared cake pans.</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Bake for 28-30 minutes, or until a toothpick inserted into the center comes out clean.</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Allow cakes to cool in the pans for 10 minutes before transferring to a wire rack to cool completely.</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Step 3: Make the Cream Cheese Frosting</span></li><li><i class="bi bi-check-circle-fill"></i> <span>In a large bowl, beat cream cheese and butter until smooth and fluffy.</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Gradually add powdered sugar, beating until light and creamy.</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Mix in vanilla extract.</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Step 4: Assemble the Cake</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Spread a layer of frosting over one cake layer, then place the second layer on top.</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Cover the entire cake with the remaining frosting and smooth it out.</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Chill for 30 minutes before slicing for the best texture.</span></li></ul></ol>
+</div>
+</div>
+<div class="col-lg-6" data-aos="fade-up" data-aos-delay="250">
+<div style="position: relative; display: inline-block;">
+<iframe allowfullscreen="" frameborder="0" height="300" id="video" src="https://www.youtube.com/embed/vGE-RfP6KRE" width="600"></iframe>
+<a class="glightbox pulsating-play-btn" href="https://www.youtube.com/embed/vGE-RfP6KRE"></a>
+</div>
+</div>
+</div>
+</div>
+</section><!-- /Menu Section -->
+<!-- Nutrition Section -->
+<section class="nutrition-section section" id="nutrition1">
+<!-- Section Title -->
+<div class="container section-title" data-aos="fade-up">
+<h2>Nutritional Value</h2>
+<p><span>Per Serving</span> <span class="description-title">Nutrition Facts</span></p>
+</div><!-- End Section Title -->
+<div class="container">
+<div class="row gy-4 justify-content-center">
+<div class="col-lg-8" data-aos="fade-up" data-aos-delay="100">
+<div class="nutrition-facts">
+<ul class="nutrition-list" id="nutrition"><ul><li><i class="bi bi-check-circle-fill"></i> <span>calories: 450 kcal</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Protein: 5 g</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Carbohydrates: 55 g</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Fats: 24 g</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Sugar: 38 g</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Fiber: 1 g</span></li><li><i class="bi bi-check-circle-fill"></i> <span>Cholesterol: 55 mg</span></li></ul></ul>
+</div>
+</div>
+</div>
+</div>
+</section><!-- /Nutrition Section -->
+<!-- Testimonials Section -->
+<section class="section light-background" id="comments-section" style="text-align: center;">
+<div class="container" style="max-width: 700px; margin: 0 auto;">
+<div class="comment-section" data-recipe="pastry">
+<div class="container section-title" data-aos="fade-up">
+<h2>Comments</h2>
+<p>Share Your <span class="description-title">Thoughts</span></p>
+</div>
+<form method="POST" style="margin-bottom: 20px;">
+<textarea name="comment" placeholder="✍️ Write your thoughtful comment here..." required="" style="background: #ffffff; 
+                     padding: 15px; 
+                     width: 100%; 
+                     height: 120px;
+                     border-radius: 28px; 
+                     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                     border: 1px solid #e0e0e0;
+                     font-family: inherit;
+                     font-size: 15px;
+                     color: #333;
+                     transition: all 0.3s ease;
+                     resize: vertical;
+                     margin-bottom: 15px;"></textarea>
+<div class="button-container" style="display: flex; justify-content: center; gap: 15px;">
+<button onmouseout="this.style.background='#6c757d'" onmouseover="this.style.background='#5a6268'" style="background: #c50202;
+                       color: white;
+                       border: none;
+                       padding: 10px 20px;
+                       border-radius: 26px;
+                       font-size: 15px;
+                       cursor: pointer;
+                       transition: all 0.3s ease;
+                       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                       display: flex;
+                       align-items: center;
+                       gap: 5px;" type="submit">
+                Post Comment
+            </button>
+<button onclick="toggleComments()" onmouseout="this.style.background='#6c757d'" onmouseover="this.style.background='#5a6268'" style="background: #6c757d;
+                       color: white;
+                       border: none;
+                       padding: 10px 20px;
+                       border-radius: 26px;
+                       font-size: 15px;
+                       cursor: pointer;
+                       transition: all 0.3s ease;
+                       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                       display: flex;
+                       align-items: center;
+                       gap: 5px;" type="button">
+                View Comments
+            </button>
+</div>
+</form>
+<div class="comments-container" id="comments" style="background: #ffffff;
+                   padding: 20px;
+                   border-radius: 8px;
+                   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                   border: 1px solid #e0e0e0;
+                   text-align: left;
+                   display: none;">
+        {% if comments %}
+            {% for comment in comments %}
+            <div class="comment" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: baseline;">
+<div style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+<span style="color: #c50202; font-weight: bold;">{{ comment.user }}: </span>
+<span style="color: #333;">{{ comment.comment }}</span>
+</div>
+<span style="color: #888; font-size: 0.8em; margin-left: 20px; white-space: nowrap;">{{ comment.timestamp }}</span>
+</div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #666; text-align: center;">No comments yet. Be the first to comment!</p>
+        {% endif %}
+    </div>
+</div>
+</div>
+</section>
+<!-- Contact Section -->
+<section class="contact section" id="contact">
+<!-- Section Title -->
+<div class="container section-title" data-aos="fade-up">
+<h2>Contact</h2>
+<p><span>Need Help?</span> <span class="description-title">Contact Us</span></p>
+</div><!-- End Section Title -->
+<div class="container" data-aos="fade-up" data-aos-delay="100">
+<div class="row gy-4">
+<div class="col-md-6">
+<div class="info-item d-flex align-items-center" data-aos="fade-up" data-aos-delay="200">
+<i class="icon bi bi-geo-alt flex-shrink-0"></i>
+<div>
+<h3>Social-media</h3>
+<a href="{{ url_for('show_page', page='about') }}" style="color: black;">contact-us</a>
+</div>
+</div>
+</div><!-- End Info Item -->
+<div class="col-md-6">
+<div class="info-item d-flex align-items-center" data-aos="fade-up" data-aos-delay="400">
+<i class="icon bi bi-envelope flex-shrink-0"></i>
+<div>
+<h3>Email Us</h3>
+<p>recipebook@example.com</p>
+</div>
+</div>
+</div><!-- End Info Item -->
+</div>
+</div>
+</section><!-- /Contact Section -->
+</main>
+<footer class="footer dark-background" id="footer">
+<div class="container">
+<div class="row gy-3">
+<!-- Follow Us Section -->
+<div class="col-lg-3 col-md-6">
+<h4>Follow Us</h4>
+<div class="social-links d-flex">
+<a class="twitter" href="#"><i class="bi bi-twitter-x"></i></a>
+<a class="facebook" href="#"><i class="bi bi-facebook"></i></a>
+<a class="instagram" href="#"><i class="bi bi-instagram"></i></a>
+<a class="linkedin" href="#"><i class="bi bi-linkedin"></i></a>
+</div>
+</div>
+</div>
+</div>
+<!-- Copyright Section -->
+<div class="container copyright text-center mt-4">
+<p>© <span>Copyright</span> <strong class="px-1 sitename">Recipe Book</strong> <span>All Rights Reserved</span></p>
+<div class="credits">
+        Designed using <a href="https://bootstrapmade.com/">BootstrapMade</a>
+</div>
+</div>
+</footer>
+<!-- Scroll Top -->
+<a class="scroll-top d-flex align-items-center justify-content-center" href="#" id="scroll-top"><i class="bi bi-arrow-up-short"></i></a>
+<!-- Preloader -->
+<div id="preloader"></div>
+<!-- Vendor JS Files -->
+<script src="static/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="static/assets/vendor/php-email-form/validate.js"></script>
+<script src="static/assets/vendor/aos/aos.js"></script>
+<script src="static/assets/vendor/glightbox/js/glightbox.min.js"></script>
+<script src="static/assets/vendor/purecounter/purecounter_vanilla.js"></script>
+<script src="static/assets/vendor/swiper/swiper-bundle.min.js"></script>
+<!-- Main JS File -->
+<script src="static/assets/js/main.js"></script>
+<script src="static/script.js"></script>
+<script>
+    function setupMealCard() {
+        const mealCard = document.getElementById('mealCard');
+        const mealIcon = document.getElementById('mealIcon');
+        const mealLabel = document.getElementById('mealLabel');
+        
+        if (!mealCard) return;
+        const mealTypeDisplay = "Dessert"; 
+        const mealTypeClass = mealTypeDisplay.toLowerCase().replace(/\s+/g, '-'); 
+        
+        mealCard.className = 'meal-card';
+    
+        mealCard.classList.add('meal-' + mealTypeClass);
+    
+        switch(mealTypeClass) {
+            case 'breakfast':
+                mealIcon.textContent = '🍳';
+                break;
+            case 'lunch':
+                mealIcon.textContent = '🍲';
+                break;
+            case 'dinner':
+                mealIcon.textContent = '🍽️';
+                break;
+            case 'snacks':
+                mealIcon.textContent = '🍰';
+                break;
+            case 'dessert':
+                mealIcon.textContent = '🍧';
+                break;
+            default:
+                mealIcon.textContent = '🍽️';
+        }
+        
+        mealLabel.textContent = mealTypeDisplay;
+    
+        mealCard.style.animation = 'none';
+        mealCard.offsetHeight;
+        mealCard.style.animation = '';
+    }
+    window.addEventListener('DOMContentLoaded', setupMealCard);
+    document.addEventListener("DOMContentLoaded", function () {
+      let currentPage = window.location.pathname.split('/').pop();
+      
+      fetch(`/get_related_recipes/${currentPage}`)
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Network response was not ok');
+              }
+              return response.json();
+          })
+          .then(data => {
+              console.log("Received data:", data); // Debugging
+              
+              let container = document.getElementById("recommendations");
+              let index = 0;
+    
+              function showNextRecipe() {
+                  if (!data || data.length === 0) {
+                      container.innerHTML = "<p>No recommendations found</p>";
+                      return;
+                  }
+                  
+                  if (index >= data.length) index = 0; // Loop back
+                  
+                  let recipe = data[index];
+                  
+                  container.innerHTML = `
+                      <a href="${recipe.url}" class="recipe-box fade-in">
+                          <img src="${recipe.image_url}" alt="${recipe.name}" 
+                               onerror="this.src='/static/images/default-recipe.jpg'">
+                          <div class="recipe-name">${recipe.name}</div>
+                      </a>
+                  `;
+    
+                  // Reset animation
+                  container.classList.remove("fade-in");
+                  void container.offsetWidth; // Trigger reflow
+                  container.classList.add("fade-in");
+                  
+                  index++;
+                  setTimeout(showNextRecipe, 5000); // Show next recipe every 5 sec
+              }
+    
+              showNextRecipe();
+          })
+          .catch(error => {
+              console.error('Error fetching recommendations:', error);
+              document.getElementById("recommendations").innerHTML = 
+                  "<p>Unable to load recommendations</p>";
+          });
+    });
+      const recipeName = 'Red velvet cake'; 
+    
+    // Function to handle like/dislike
+    function likeRecipe() {
+        const likeButton = document.getElementById('like-button');
+        const heartIcon = likeButton.querySelector('i');
+    
+        fetch('/like_recipe', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({recipe_name: recipeName})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Toggle the heart icon and animation based on the liked state
+                if (data.liked) {
+                    heartIcon.classList.remove('far'); // Remove empty heart
+                    heartIcon.classList.add('fas'); // Add filled heart
+                    heartIcon.style.color = 'red'; // Change heart color to red
+                    likeButton.classList.add('liked'); // Add animation class
+                } else {
+                    heartIcon.classList.remove('fas'); // Remove filled heart
+                    heartIcon.classList.add('far'); // Add empty heart
+                    heartIcon.style.color = ''; // Reset heart color
+                    likeButton.classList.remove('liked'); // Remove animation class
+                }
+    
+                // Save the liked state to localStorage
+                localStorage.setItem(`liked_${recipeName}`, data.liked);
+            } else {
+                console.error(data.message); 
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+    
+    // Function to restore the liked state on page load
+    function restoreLikeState() {
+        const likeButton = document.getElementById('like-button');
+        const heartIcon = likeButton.querySelector('i');
+    
+        // Retrieve the liked state from localStorage
+        const liked = localStorage.getItem(`liked_${recipeName}`);
+    
+        // Update the heart icon based on the stored liked state
+        if (liked === 'true') {
+            heartIcon.classList.remove('far'); // Remove empty heart
+            heartIcon.classList.add('fas'); // Add filled heart
+            heartIcon.style.color = 'red'; // Change heart color to red
+            likeButton.classList.add('liked'); // Add animation class
+        } else {
+            heartIcon.classList.remove('fas'); // Remove filled heart
+            heartIcon.classList.add('far'); // Add empty heart
+            heartIcon.style.color = ''; // Reset heart color
+            likeButton.classList.remove('liked'); // Remove animation class
+        }
+    }
+    
+    // Restore the liked state when the page loads
+    window.onload = restoreLikeState;
+      </script>
+</body>
+</html>

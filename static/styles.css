@@ -1,0 +1,360 @@
+#recommendations-container {
+    position: fixed;
+    right: 20px;
+    top: 100px;
+    width: 220px;
+    padding: 10px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+.recipe-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100px;
+    margin: 5px auto;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f8f8f8;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease-in-out;
+    text-decoration: none;
+}
+
+.recipe-box:hover {
+    transform: scale(1.1);
+}
+
+.recipe-box img {
+    width: 100px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 10px 10px 0 0;
+}
+
+.recipe-name {
+    width: 100%;
+    background: #e0e0e0;
+    padding: 5px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    border-radius: 0 0 10px 10px;
+}
+
+.fade-in {
+    animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+    body {
+
+  width: 100%;
+  height: 100vh;
+  min-height: 400px;
+  background-color: #fbfbfb;
+
+  .block-container {
+    position: relative;
+    width: 134px;
+    height: 134px;
+    margin: 32px;
+    transition: 250ms;
+    perspective: 500px;
+
+    .btn-back {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      width: inherit;
+      height: inherit;
+      border-radius: 32px;
+      transition: 250ms;
+      transform-style: preserve-3d;
+      transform-origin: bottom right;
+      transform: rotateZ(15deg);
+      will-change: transform;
+      box-shadow: 16px 0 40px #e4e4e4;
+    }
+    .btn-front {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      width: inherit;
+      height: inherit;
+      border-radius: 32px;
+      background-color: #ffffff33;
+      backdrop-filter: blur(20px);
+      transition: 250ms;
+      transform-style: preserve-3d;
+      transform-origin: top left;
+      overflow: hidden;
+
+      svg.frame {
+        width: inherit;
+        height: inherit;
+
+        rect {
+          width: inherit;
+          height: inherit;
+          fill: none;
+          stroke-width: 4;
+        }
+      }
+
+      svg.icon {
+        position: absolute;
+        inset: 50% 0 0 50%;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    &:hover {
+      & > .btn-back {
+        transform: translateZ(20px) rotateZ(15deg) rotateX(-20deg) rotateY(-20deg);
+      }
+
+      & > .btn-front {
+        transform: translateZ(80px) translateY(-5px) rotateX(15deg) rotateY(15deg);
+      }
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    flex-direction: column;
+  }
+}
+.block-container {
+            position: relative;
+            width: calc(100% / 5 - 20px); /* Adjust width dynamically */
+            min-width: 180px;
+            max-width: 200px;
+        }
+.recipe-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 17px;
+            width: 80%;
+            margin: auto;
+        }
+
+.btn-back {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: inherit;
+  height: inherit;
+  border-radius: 32px;
+  transition: 250ms;
+  transform-style: preserve-3d;
+  box-shadow: 16px 0 40px #e4e4e4;
+}
+
+.btn-front {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: inherit;
+  height: inherit;
+  border-radius: 32px;
+  background-color: #ffffff33;
+  backdrop-filter: blur(20px);
+  transition: 250ms;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.recipe-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: black;
+  font-weight: bold;
+}
+
+.recipe-image {
+  width: 100px;
+  height: 100px;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.recipe-name {
+  margin-top: 8px;
+  font-family:cursive;
+}
+
+@media (max-width: 600px) {
+  body {
+    flex-direction: column;
+  }
+}
+    /* Liked recipes container styles */
+    .liked-recipes-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .liked-recipe-card {
+      width: 250px;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .liked-recipe-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .liked-recipe-img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+    }
+
+    .liked-recipe-name {
+      padding: 15px;
+      text-align: center;
+      font-weight: bold;
+      color: #333;
+    }
+
+    /* Pagination styles */
+    .pagination {
+      text-align: center;
+      margin-top: 30px;
+      margin-bottom: 50px;
+    }
+
+    .pagination button {
+      padding: 10px 20px;
+      margin: 0 10px;
+      border: none;
+      background-color: #000000;
+      color: white;
+      cursor: pointer;
+      border-radius: 25px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .pagination button:hover {
+      background-color: #333;
+    }
+
+    .pagination button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Original styles from tes.html */
+    #recommendations-container {
+      position: relative;
+      left: 1200px;
+      top: -30px;
+      width: 220px;
+      padding: 10px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+
+    /* Search Container */
+    .search-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s ease;
+      opacity: 0;
+      width: 0;
+      overflow: hidden;
+    }
+
+    .search-container.active {
+      opacity: 1;
+      width: 300px;
+    }
+
+    /* Search Form */
+    #searchForm {
+      display: flex;
+      align-items: center;
+      background-color: white;
+      border-radius: 25px;
+      border: 2px solid #000000;
+      overflow: hidden;
+      box-shadow: 0px 2px 5px rgba(183, 0, 0, 0.2);
+      flex: 1;
+    }
+
+    /* Search Input */
+    #searchInput {
+      flex: 1;
+      padding: 10px 20px;
+      border: none;
+      outline: none;
+      font-size: 16px;
+    }
+
+    /* Search Button */
+    #searchForm button {
+      background: linear-gradient(to right, #000000, #000000);
+      color: rgb(0, 0, 0);
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 25px;
+      transition: background-color 0.3s;
+    }
+
+    #searchForm button:hover {
+      background-color: #f3a847;
+    }
+
+    /* Search Icon */
+    .search-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Search Button (Main Button) */
+    .btn-getstarted {
+      margin-top:100px;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 20px;
+      border-radius: 25px;
+      transition: background-color 0.3s;
+    }
+
+    .btn-getstarted:hover {
+      background-color: #f3a847;
+    }
+
+

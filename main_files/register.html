@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<!-- Required meta tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<title>Recipe Book</title>
+	<!-- Google Fonts -->
+	<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+	<!-- main css -->
+	<link rel="stylesheet" href="static/style.css">
+	<style>
+		/* Container and Grid System */
+		.container-fluid {
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            height: 100vh;
+        }
+
+        .col-lg-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+            height: 100%;
+            position: relative;
+        }
+
+        @media (min-width:992px) {
+            .col-lg-6 {
+                -ms-flex: 0 0 50%;
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+
+        /* Left Side Styling */
+        .banner_left {
+            background: #ff6c6c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            padding-top: 30px;
+        }
+
+        /* Right Side Styling */
+        .banner_right {
+            background: #fff;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Recipe Book Header */
+		.recipe-header {
+        font-family: 'Dancing Script', cursive;
+        font-size: 3.5rem;
+        margin: 20px 0;
+        text-align: center;
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 360px;
+        padding: 20px 0;
+        background:transparent;
+        z-index: 1;
+    }
+    .recipe-header span.pink {
+        color: #000000;
+    }
+    .recipe-header span.black {
+        color: #ff6b6b;
+    }
+
+        /* Login Container */
+        .login-container {
+            width: 100%;
+            max-width: 350px; /* Reduced from 400px */
+            padding: 30px; /* Reduced from 40px */
+            background: white;
+            border-radius: 20px;
+            margin-top: 150px;
+			margin-left:100px;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.2);
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .login-container:hover {
+            box-shadow: 0 15px 35px rgb(0, 0, 0);
+            border-color: rgb(0, 0, 0);
+        }
+		
+		.login-container h2 {
+			text-align: center;
+			margin-bottom: 25px; /* Reduced from 30px */
+			color: #333;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            font-size: 1.8rem; /* Reduced from 2rem */
+		}
+		
+		.login-container .form-group {
+			margin-bottom: 20px; /* Reduced from 25px */
+		}
+		
+		.login-container label {
+			display: block;
+			margin-bottom: 8px; /* Reduced from 10px */
+			font-weight: 500;
+            font-family: 'Montserrat', sans-serif;
+            color: #555;
+            font-size: 0.9rem;
+		}
+		
+		.login-container input {
+			width: 100%;
+			padding: 12px; /* Reduced from 14px */
+			border: 1px solid #eee;
+			border-radius: 12px; /* More curved borders */
+			font-size: 15px; /* Slightly smaller */
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.3s;
+		}
+
+        .login-container input:focus {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+            outline: none;
+        }
+		
+		.login-container button {
+			width: 100%;
+			padding: 12px; /* Reduced from 14px */
+			background-color: #ff6b6b;
+			color: white;
+			border: none;
+			border-radius: 12px; /* More curved borders */
+			font-size: 15px; /* Slightly smaller */
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+			cursor: pointer;
+			transition: all 0.3s;
+            margin-top: 8px; /* Reduced from 10px */
+		}
+		
+		.login-container button:hover {
+			background-color: #ff5252;
+            transform: translateY(-2px);
+		}
+		
+		.login-links {
+			text-align: center;
+			margin-top: 20px; /* Reduced from 25px */
+            font-family: 'Montserrat', sans-serif;
+		}
+		
+		.login a {
+			color: #666;
+			text-decoration: none;
+			transition: color 0.3s;
+            font-size: 0.9rem; /* Slightly smaller */
+		}
+		
+		.login-links a:hover {
+			color: #ff6b6b;
+            text-decoration: underline;
+		}
+
+        /* Cupcake Image and Animation Positioning */
+        .animation-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .face-img {
+            width: 35%;
+			left:-20%;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Planet animation adjustments for centering */
+        .round-planet {
+            position: absolute;
+            z-index: 1;
+        }
+
+        .round-planet.planet {
+            width: 540px;
+            height: 540px;
+            border-radius: 50%;
+            border: 3px solid #f9f9ff;
+        }
+
+        .round-planet.planet2 {
+            width: 430px;
+            height: 430px;
+        }
+
+        .round-planet.planet3 {
+            width: 320px;
+            height: 320px;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 991px) {
+            .row {
+                flex-direction: column;
+            }
+            
+            .col-lg-6 {
+                flex: 0 0 100%;
+                max-width: 100%;
+                height: auto;
+            }
+
+            .banner_left {
+                padding: 100px 1rem 2rem;
+            }
+
+            .recipe-header {
+                font-size: 2.8rem;
+                padding: 15px 0;
+                position: fixed;
+                top: 0;
+                width: 100%;
+            }
+
+            .login-container {
+                padding: 25px;
+                max-width: 90%;
+                margin-top: 80px;
+            }
+
+            .face-img {
+                width: 50%;
+            }
+        }
+		.flash {
+            max-width: 100%;
+            height: auto;
+            position: absolute;
+            top:14%;
+            left:180px;
+           font-size:20px;  
+           
+            text-decoration: underline;
+            -webkit-text-fill-color:rgb(0, 0, 0);
+            border-radius:20px;
+            }
+            .link{
+              font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+              font-size: 1rem;
+              font-weight: bolder;
+              position: inherit;
+              bottom:-10px;
+              
+            }
+	</style>
+</head>
+
+<body>
+	<section class="home_banner">
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-lg-6 p-0">
+					<div class="banner_left">
+                        <h1 class="recipe-header">
+							<span class="pink">Recipe</span> <span class="black">Book</span>
+						</h1>
+						<div class="flash">
+							{% with messages = get_flashed_messages(with_categories=true) %}
+							{% if messages %}
+									<ul>
+									{% for category, message in messages %}
+									{{ message }}
+									{% endfor %}
+									</ul>
+							{% endif %}
+						{% endwith %}
+						</div>		
+						<div class="login-container">
+							<h2>Welcome</h2>
+              <form method="POST" action="/register">
+                <div class="mail">
+                    <label for="email">E-mail :</label>
+                <input type="text" id="email" name="email" required>
+                <p></p>
+                </div>
+                <div>
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div>
+                    <label for="password">Password :</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <div>
+                    <button type="submit">Sign Up</button>
+                </div>
+              </form>
+                <div class="login"><a href="/login">Already have an account? Login here</a></div>
+						</div>
+					</div>
+				</div>
+				<div class="col-lg-6 p-0">
+					<div class="banner_right">
+						<div class="animation-container">
+							<div class="round-planet planet">
+								<div class="round-planet planet2">
+									<div class="round-planet planet3">
+										<div class="shape shape1"></div>
+										<div class="shape shape2"></div>
+										<div class="shape shape3"></div>
+										<div class="shape shape4"></div>
+										<div class="shape shape5"></div>
+										<div class="shape shape6"></div>
+									</div>
+								</div>
+							</div>
+							<img class="face-img" src="static/images/home-banner.png" alt="Cupcake">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+</body>
+
+</html>

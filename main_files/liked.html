@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<title id="title">Liked</title>
+<html lang="en">
+
+<head>
+  <style>
+    body {
+
+  width: 100%;
+  height: 100vh;
+  min-height: 400px;
+  background-color: #fbfbfb;
+
+  .block-container {
+    position: relative;
+    width: 134px;
+    height: 134px;
+    margin: 32px;
+    transition: 250ms;
+    perspective: 500px;
+
+    .btn-back {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      width: inherit;
+      height: inherit;
+      border-radius: 32px;
+      transition: 250ms;
+      transform-style: preserve-3d;
+      transform-origin: bottom right;
+      transform: rotateZ(15deg);
+      will-change: transform;
+      box-shadow: 16px 0 40px #e4e4e4;
+    }
+    .btn-front {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      width: inherit;
+      height: inherit;
+      border-radius: 32px;
+      background-color: #ffffff33;
+      backdrop-filter: blur(20px);
+      transition: 250ms;
+      transform-style: preserve-3d;
+      transform-origin: top left;
+      overflow: hidden;
+
+      svg.frame {
+        width: inherit;
+        height: inherit;
+
+        rect {
+          width: inherit;
+          height: inherit;
+          fill: none;
+          stroke-width: 4;
+        }
+      }
+
+      svg.icon {
+        position: absolute;
+        inset: 50% 0 0 50%;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    &:hover {
+      & > .btn-back {
+        transform: translateZ(20px) rotateZ(15deg) rotateX(-20deg) rotateY(-20deg);
+      }
+
+      & > .btn-front {
+        transform: translateZ(80px) translateY(-5px) rotateX(15deg) rotateY(15deg);
+      }
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    flex-direction: column;
+  }
+}
+.block-container {
+            position: relative;
+            width: calc(100% / 5 - 20px); /* Adjust width dynamically */
+            min-width: 180px;
+            max-width: 200px;
+        }
+.recipe-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 17px;
+            width: 80%;
+            margin: auto;
+        }
+
+.btn-back {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: inherit;
+  height: inherit;
+  border-radius: 32px;
+  transition: 250ms;
+  transform-style: preserve-3d;
+  box-shadow: 16px 0 40px #e4e4e4;
+}
+
+.btn-front {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: inherit;
+  height: inherit;
+  border-radius: 32px;
+  background-color: #ffffff33;
+  backdrop-filter: blur(20px);
+  transition: 250ms;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.recipe-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: black;
+  font-weight: bold;
+}
+
+.recipe-image {
+  width: 100px;
+  height: 100px;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.recipe-name {
+  margin-top: 8px;
+  font-family:cursive;
+}
+
+@media (max-width: 600px) {
+  body {
+    flex-direction: column;
+  }
+}
+    /* Liked recipes container styles */
+    .liked-recipes-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .liked-recipe-card {
+      width: 250px;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .liked-recipe-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .liked-recipe-img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+    }
+
+    .liked-recipe-name {
+      padding: 15px;
+      text-align: center;
+      font-weight: bold;
+      color: #333;
+    }
+
+    /* Pagination styles */
+    .pagination {
+      text-align: center;
+      margin-top: 30px;
+      margin-bottom: 50px;
+    }
+
+    .pagination button {
+      padding: 10px 20px;
+      margin: 0 10px;
+      border: none;
+      background-color: #000000;
+      color: white;
+      cursor: pointer;
+      border-radius: 25px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .pagination button:hover {
+      background-color: #333;
+    }
+
+    .pagination button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Original styles from tes.html */
+    #recommendations-container {
+      position: relative;
+      left: 1200px;
+      top: -30px;
+      width: 220px;
+      padding: 10px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+
+    /* Search Container */
+    .search-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s ease;
+      opacity: 0;
+      width: 0;
+      overflow: hidden;
+    }
+
+    .search-container.active {
+      opacity: 1;
+      width: 300px;
+    }
+
+    /* Search Form */
+    #searchForm {
+      display: flex;
+      align-items: center;
+      background-color: white;
+      border-radius: 25px;
+      border: 2px solid #000000;
+      overflow: hidden;
+      box-shadow: 0px 2px 5px rgba(183, 0, 0, 0.2);
+      flex: 1;
+    }
+
+    /* Search Input */
+    #searchInput {
+      flex: 1;
+      padding: 10px 20px;
+      border: none;
+      outline: none;
+      font-size: 16px;
+    }
+
+    /* Search Button */
+    #searchForm button {
+      background: linear-gradient(to right, #000000, #000000);
+      color: rgb(0, 0, 0);
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 25px;
+      transition: background-color 0.3s;
+    }
+
+    #searchForm button:hover {
+      background-color: #f3a847;
+    }
+
+    /* Search Icon */
+    .search-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Search Button (Main Button) */
+    .btn-getstarted {
+      margin-top:100px;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 20px;
+      border-radius: 25px;
+      transition: background-color 0.3s;
+    }
+
+    .btn-getstarted:hover {
+      background-color: #f3a847;
+    }
+
+    /* Keep all other original styles */
+    /* ... (other existing styles remain unchanged) ... */
+  </style>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <meta name="description" content="">
+  <meta name="keywords" content="">
+
+  <!-- Favicons -->
+  <link href="static/assets/img/favicon.png" rel="icon">
+  <link href="static/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Amatic+SC:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="static/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="static/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="static/assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="static/assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="static/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+  <!-- Font Awesome for search icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <!-- Main CSS File -->
+  <link href="static/assets/css/main.css" rel="stylesheet">
+</head>
+
+<body class="index-page">
+
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container position-relative d-flex align-items-center justify-content-between">
+      <a href="index.html" class="logo d-flex align-items-center me-auto me-xl-0">
+        <h1 class="sitename">The Recipe Book</h1>
+        <span>.</span>
+      </a>
+      <nav id="navmenu" class="navmenu">
+        <ul>
+          <li> <a href="{{ url_for('show_page', page='filtered_recipes') }}">Filter</a></li>
+          <li><a href="{{ url_for('show_page', page='ingredients') }}">Ingredients</a></li>
+          <li><a href="{{ url_for('show_page', page='category') }}">Veg/NonVeg</a></li>
+        </ul>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+  
+      <!-- Search Container -->
+      <div class="search-container" id="searchContainer">
+        <div class="search">
+          <form id="searchForm">
+            <input type="text" id="searchInput" name="search" placeholder="Search recipes..." required>
+            <button type="submit">
+              <div class="search-icon">
+                <i class="fa-solid fa-magnifying-glass" style="color:white;"></i>
+              </div>
+            </button>
+          </form>
+        </div>
+      </div>
+  
+      <!-- Search Button -->
+      <a class="btn-getstarted" id="searchButton">Search</a>
+      <li> <a href="{{ url_for('show_page', page='main') }}" class="active"><img src="{{ url_for('static', filename='images/home.png') }}"></a></li>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Hero Section -->
+    <section id="hero" class="hero section light-background">
+      <div class="container">
+        <div class="row gy-4 justify-content-center justify-content-lg-between">
+          <div class="col-lg-12 order-2 order-lg-1 d-flex flex-column justify-content-center">
+            <h1 data-aos="fade-up">Your Liked Recipes</h1>
+            <p data-aos="fade-up" data-aos-delay="100">All the recipes you've loved in one place</p>
+            <div class="recipe-container" id="recipeContainer"></div>
+    
+<div class="pagination">
+    <button id="prevBtn" onclick="prevPage()" disabled>Prev</button>
+    <button id="nextBtn" onclick="nextPage()">Next</button>
+</div>
+<script>
+    let currentPage = 0;
+    const itemsPerPage = 5;
+
+    // Use liked_recipes instead of tables
+    const recipes = [
+    {% for recipe in liked_recipes %}
+        {
+            name: "{{ recipe.name }}",
+            url: "{{ recipe.url }}",
+            image: "{{ recipe.image }}",  
+            defaultImage: "{{ recipe.default_image }}"
+        },
+    {% endfor %}
+];
+
+    const totalPages = Math.ceil(recipes.length / itemsPerPage);
+    const recipeContainer = document.getElementById("recipeContainer");
+
+    function showPage(page) {
+        recipeContainer.innerHTML = "";
+        const start = page * itemsPerPage;
+        const end = start + itemsPerPage;
+
+        // Display recipes for the current page
+        recipes.slice(start, end).forEach(recipe => {
+            const recipeElement = document.createElement("div");
+            recipeElement.className = "block-container";
+            recipeElement.innerHTML = `
+                <div class="btn-back" style="background: linear-gradient(135deg, #4682eb -20%, #01beff 120%);"></div>
+                <div class="btn-front">
+                    <a href="${recipe.url}" class="recipe-button">
+                        <img src="${recipe.image}" 
+                             onerror="this.onerror=null; this.src='${recipe.defaultImage}';" 
+                             class="recipe-image">
+                        <div class="recipe-name">${recipe.name}</div>
+                    </a>
+                </div>
+            `;
+            recipeContainer.appendChild(recipeElement);
+        });
+
+        document.getElementById("prevBtn").disabled = page === 0;
+        document.getElementById("nextBtn").disabled = page === totalPages - 1;
+
+    }
+
+    function nextPage() {
+        if (currentPage < totalPages - 1) {
+            currentPage++;
+            showPage(currentPage);
+        }
+    }
+
+    function prevPage() {
+        if (currentPage > 0) {
+            currentPage--;
+            showPage(currentPage);
+        }
+    }
+
+    // Show the first page on load
+    showPage(currentPage);
+    // Search functionality from tes.html
+    document.getElementById("searchButton").addEventListener("click", function() {
+        const searchContainer = document.getElementById("searchContainer");
+        searchContainer.classList.toggle("active");
+      });
+
+      document.getElementById("searchForm").addEventListener("submit", async function(event) {
+        event.preventDefault();
+        let searchQuery = document.getElementById("searchInput").value;
+        let response = await fetch('/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ search: searchQuery })
+        });
+    
+        let result = await response.json();
+        if (result.redirect) {
+          window.location.href = result.redirect;
+        } else {
+          alert(result.message);
+        }
+      });
+</script>
+          </div>
+        </div>
+      </div>
+    </section><!-- /Hero Section -->
+
+    <!-- Liked Recipes Section -->
+    <section id="liked-recipes" class="section">
+      <div class="container">
+        <div class="liked-recipes-container" id="likedRecipesContainer">
+          <!-- Liked recipes will be dynamically inserted here -->
+        </div>
+
+    </section>
+
+  </main>
+
+  <footer id="footer" class="footer dark-background">
+    <div class="container">
+      <div class="row gy-3">
+        <!-- Follow Us Section -->
+        <div class="col-lg-3 col-md-6">
+          <h4>Follow Us</h4>
+          <div class="social-links d-flex">
+            <a href="#" class="twitter"><i class="bi bi-twitter-x"></i></a>
+            <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="instagram"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="linkedin"><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Copyright Section -->
+    <div class="container copyright text-center mt-4">
+      <p>© <span>Copyright</span> <strong class="px-1 sitename">Recipe Book</strong> <span>All Rights Reserved</span></p>
+      <div class="credits">
+        Designed using <a href="https://bootstrapmade.com/">BootstrapMade</a></a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Preloader -->
+  <div id="preloader"></div>
+
+  <!-- Vendor JS Files -->
+  <script src="static/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="static/assets/vendor/php-email-form/validate.js"></script>
+  <script src="static/assets/vendor/aos/aos.js"></script>
+  <script src="static/assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="static/assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="static/assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+  <!-- Main JS File -->
+  <script src="static/assets/js/main.js"></script>
+
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+Flask
+bcrypt
+Flask-MySQLdb
+mysql-connector-python
+beautifulsoup4
+Jinja2

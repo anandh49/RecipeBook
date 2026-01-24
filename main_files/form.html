@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Submission</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&display=swap');
+        :root {
+            font-size: 125%;
+        }
+        *, *:before, *:after {
+            box-sizing: border-box;
+        }
+        body {
+            font: 1em/1.618 Inter, sans-serif;
+            margin: 0;
+            color: #224;
+            background: url(https://i.ibb.co/Qjt7TJn/milad-fakurian-E8-Ufcyxz514-unsplash-1.jpg) center / cover no-repeat fixed;
+        }
+        .site-container {
+            display: grid;
+            place-items: center;
+            min-height: 100vh;
+            padding: 1.5em;
+        }
+        .card {
+            width:700px;
+            max-width: 700px;
+            padding: 35px;
+            border: 1px solid rgba(255, 255, 255, .25);
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.45);
+            box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(15px);
+        }
+        h2 {
+            font-family: "Josefin Sans", sans-serif;
+            text-align: center;
+            color: #000000;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        label {
+            font-weight: 500;
+            margin-top: 10px;
+            display: block;
+            color: #050505;
+            font-size: 14px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fff;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+            transition: background 0.3s ease-in-out;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .radio-container {
+    display: flex;
+    align-items: center; /* Align items vertically */
+    gap: 15px; /* Add spacing between elements */
+    margin-top: 10px;
+}
+
+.radio-container div {
+    display: flex;
+    align-items: center;
+    gap: 10px;}
+
+.radio-container input[type="radio"] {
+    margin: 0; 
+}
+.slider-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+        .slider-options {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 12px;
+            font-weight: normal;
+            color: rgb(0, 0, 0);
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 15px 0;
+        }
+        
+        #meal-label {
+            font-size: 0.8em;
+            font-weight: bold;
+            color: #000000;
+        }
+        .logbut {
+    position: absolute; 
+}
+.logbut img {
+    position:absolute;  
+    margin-left:1455px;
+    top:42px;
+    width:30px;
+    height:auto;
+}
+    </style>
+   
+</head>
+<body>
+    <div class="logbut">
+        <a href="{{ url_for('show_page', page='admin') }}">
+            <img src="{{ url_for('static', filename='images/logout-1024-removebg-preview.png') }}">
+          </a>
+        </div>
+    <div class="site-container">
+        <div class="card">
+            <h2>Add New Recipe</h2>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-messages {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <form action="/add_recipe" method="post">
+                <label for="recipe_name">Recipe Name</label>
+                <input type="text" id="recipe_name" name="recipe_name" required>
+                
+                <label for="head">Heading</label>
+                <input type="text" id="head" name="head" required>
+                
+                <label for="image">Image Link</label>
+                <input type="text" id="image" name="image">
+                
+                <label for="description">Description</label>
+                <textarea id="description" name="description"></textarea>
+                
+                <label for="time">Time for Preparation</label>
+                <textarea id="time" name="time"></textarea>
+                
+                <label for="ingredients">Ingredients</label>
+                <textarea id="ingredients" name="ingredients" required></textarea>
+                
+                <label for="nutrition">Nutritional Items</label>
+                <textarea id="nutrition" name="nutrition"></textarea>
+                
+                <label for="instructions">Instructions</label>
+                <textarea id="instructions" name="instructions" required></textarea>
+                
+                <label for="tips">Tips & Tricks</label>
+                <textarea id="tips" name="tips"></textarea>
+                
+                <label for="fun">Fun Facts</label>
+                <textarea id="fun" name="fun"></textarea>
+                
+                <label for="video">Video Link (embedded)</label>
+                <input type="text" id="video" name="video">
+                
+                 <div class="radio-container">
+                    <div>
+                        <input type="radio" id="veg" name="category" value="veg">
+                <label for="veg">Veg</label>
+                <input type="radio" id="nonveg" name="category" value="nonveg">
+                <label for="nonveg">NonVeg</label>
+                    </div>
+                </div>
+                <div id="categoryError" style="color: red; display: none;">Please select a category (Veg or NonVeg)</div>
+                <div id="meal-slider-container">
+                    <label for="meal-type">Select Meal Type</label>
+                    <input type="range" id="meal-type" name="meal-type" min="0" max="6" step="1" value="0">
+                    <span id="meal-label">Breakfast</span>
+                    <script>
+                        const mealTypes = ["Breakfast", "Brunch", "Lunch","Dessert","Dinner","Drinks"];
+                        const slider = document.getElementById("meal-type");
+                        const mealLabel = document.getElementById("meal-label");
+                
+                        slider.addEventListener("input", function() {
+                            mealLabel.textContent = mealTypes[slider.value];
+                        });
+                        document.querySelector('form').addEventListener('submit', function(e) {
+                        const selected = document.querySelector('input[name="category"]:checked');
+                        if (!selected) {
+                            e.preventDefault(); // Prevent form submission
+                            document.getElementById('categoryError').style.display = 'block';
+                        }
+                    });
+                    </script>
+                </div>  
+                <button type="submit">Submit Recipe</button>
+            </form>
+
+            
+            <h2>Delete Recipe</h2>
+            <form action="/delete_recipe" method="POST">
+                <label for="delete_recipe_name">Recipe Name:</label>
+                <input type="text" id="delete_recipe_name" name="recipe_name" required>
+                <button type="submit" class="delete-btn">Delete Recipe</button>
+            </form>
+        </div>
+</body>
+</html>
