@@ -1,182 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recipe Submission</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap">
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-* {
-	box-sizing: border-box;
-	margin: 0;
-	padding: 0;
-	font-family: "Nunito", sans-serif;
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - The Recipe Book</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="static/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-body {
-    background: rgb(229, 62, 255);
-  background: linear-gradient(326deg, rgba(147,13,224,1) 0%, rgba(0,159,231,1) 15%, rgba(0,222,223,1) 50%, rgba(156,0,224,1) 100%);
-  background-repeat:no-repeat;
-  background-size: 100% 600%;
-  min-height: 100%;
-}
+  <style>
+    :root {
+      --color-primary: #ce1212;
+      --color-secondary: #37373f;
+      --color-bg: #ffffff;
+    }
 
-.container {
-  gap: 20px;
-  min-height: 100vh;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
-}
+    body {
+      font-family: "Inter", sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-secondary);
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-.card {
-  width: 250px;
-  min-height: 200px;
-  background: rgba( 255, 255, 255, 0.15 );
-  box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
-  backdrop-filter: blur( 18px );
-  -webkit-backdrop-filter: blur( 18px );
-  border: 1px solid rgba( 255, 255, 255, 0.18 );
-  border-radius: 1rem;
-  padding: 1.5rem;
-  z-index: 10;
-  color: rgb(26, 22, 22);
-}
+    /* --- Background Animation --- */
+    .bg-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+      opacity: 0.1;
+      pointer-events: none;
+    }
+    .food-icon {
+      position: absolute;
+      font-size: 2rem;
+      animation: float 15s infinite linear;
+      color: #000;
+    }
+    @keyframes float {
+      0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+    }
 
-.title {
-  font-size: 2.2rem;
-  margin-bottom: 1rem;
-}
+    /* --- Header --- */
+    .header {
+      background: #fff;
+      box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+      padding: 15px 0;
+      z-index: 997;
+    }
+    .logo h1 {
+      font-family: "Amatic SC", sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--color-secondary);
+      margin: 0;
+    }
+    .logo span {
+      color: var(--color-primary);
+    }
+    .nav-btn {
+      background: var(--color-primary);
+      color: white;
+      border-radius: 50px;
+      padding: 8px 25px;
+      text-decoration: none;
+      transition: 0.3s;
+      border: none;
+    }
+    .nav-btn:hover {
+      background: #ec2727;
+      color: white;
+    }
 
-.subtitle {
-  font-size: 1rem;
-  margin-bottom: 2rem;
-}
-
-.btn {
-  background: none;
-  border: none;
-  text-align: center;
-  font-size: 1rem;
-  color: whitesmoke;
-  background-color: #fa709a;
-  padding: 0.8rem 1.8rem;
-  border-radius: 2rem;
-  cursor: pointer;
-}
-
-
-.admin-heading {
-  background: rgba( 255, 255, 255, 0.15 );
-  box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
-  backdrop-filter: blur( 18px );
-  -webkit-backdrop-filter: blur( 18px );
-  border: 1px solid rgba( 255, 255, 255, 0.18 );
-  border-radius: 1rem;
-  padding: 1.5rem;
-  z-index: 10;
-  color: whitesmoke;
-  text-align: center;
-  font-family: 'Orbitron', sans-serif;
-            font-size: 60px;
-            font-weight: bold;
-            letter-spacing: 10px;
-    
-}
-.logbut {
-    position: absolute; 
-}
-.logbut img {
-    position:absolute;  
-    margin-left:1455px;
-   margin-top:-700px;
-    width:30px;
-    height:auto;
-}
-.blob {
-  position: absolute;
-  width: 500px;
-  height: 500px;
-  background: linear-gradient(
-    180deg,
-    rgba(47, 184, 255,0.42) 31.77%,
-    #5c9df1 100%
-  );
-  mix-blend-mode: color-dodge;
-  -webkit-animation: move 25s infinite alternate;
-          animation: move 25s infinite alternate;
-  transition: 1s cubic-bezier(0.07, 0.8, 0.16, 1);
-}
-
-.blob:hover {
-  width: 520px;
-  height: 520px;
-  -webkit-filter: blur(30px);
-          filter: blur(30px);
-  box-shadow:
-    inset 0 0 0 5px rgba(255,255,255, 0.6),
-    inset 100px 100px 0 0px #fa709a,
-    inset 200px 200px 0 0px #784ba8,
-    inset 300px 300px 0 0px #2b86c5;
-}
-
-@-webkit-keyframes move {
-  from {
-    transform: translate(-100px, -50px) rotate(-90deg);
-    border-radius: 24% 76% 35% 65% / 27% 36% 64% 73%;
-  }
-
-  to {
-    transform: translate(500px, 100px) rotate(-10deg);
-    border-radius: 76% 24% 33% 67% / 68% 55% 45% 32%;
-  }
-}
-
-@keyframes move {
-  from {
-    transform: translate(-100px, -50px) rotate(-90deg);
-    border-radius: 24% 76% 35% 65% / 27% 36% 64% 73%;
-  }
-
-  to {
-    transform: translate(500px, 100px) rotate(-10deg);
-    border-radius: 76% 24% 33% 67% / 68% 55% 45% 32%;
-  }
-}
+    /* --- Cards --- */
+    .admin-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .action-card {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 15px;
+      padding: 40px;
+      text-align: center;
+      transition: all 0.3s ease-in-out;
+      box-shadow: 0px 5px 15px rgba(0,0,0,0.05);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .action-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0px 15px 30px rgba(206, 18, 18, 0.15);
+      border-color: var(--color-primary);
+    }
+    .card-icon {
+      font-size: 3rem;
+      color: var(--color-primary);
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-family: "Amatic SC", sans-serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .btn-action {
+      margin-top: 20px;
+      padding: 12px 30px;
+      border-radius: 50px;
+      background: var(--color-secondary);
+      color: white;
+      border: none;
+      transition: 0.3s;
+    }
+    .btn-action:hover {
+      background: var(--color-primary);
+    }
   </style>
-        </head>
-        
-        <body>
-          
-          <div class="admin-container">
-            <h1 class="admin-heading">Admin</h1>
-		    <div class="container">
-            <div class="card">
-              <h1 class="title">Add/Remove</h1>
-              <p class="subtitle">Add a new Recipe or remove a existing Recipe</p>
-              <form action="{{ url_for('form') }}" method="get">
-                <button class="btn" type="submit">Add</button>
-            </form>
-            </div>
-            <div class="card">
-              <h1 class="title">Edit Recipe</h1>
-              <p class="subtitle">Make modifications to an existing recipe</p>
-              
-              <form action="/editor/" method="get">
-                
-                <button class="btn" type="submit">Edit</button>
-            </form>
-            </div>
-            <div class="blob"></div>
-          </div>
-          <div class="logbut">
-            <a href="{{ url_for('show_page', page='login') }}">
-                <img src="{{ url_for('static', filename='images/logout-1024-removebg-preview.png') }}">
-              </a>
-            </div>
-        </body>
-      </html>
+</head>
+<body>
+
+  <header class="header sticky-top">
+    <div class="container d-flex align-items-center justify-content-between">
+      <a href="{{ url_for('show_page', page='main') }}" class="logo d-flex align-items-center text-decoration-none">
+        <h1>The Recipe Book<span>.</span></h1>
+      </a>
+      <div>
+        <span class="me-3 fw-bold">Admin Panel</span>
+        <a href="{{ url_for('show_page', page='login') }}" class="nav-btn">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="bg-animation" id="bgAnimation">
+    </div>
+
+  <div class="admin-container container">
+    <div class="row g-4 justify-content-center w-100">
+      
+      <div class="col-md-6 col-lg-5">
+        <div class="action-card">
+          <i class="fa-solid fa-utensils card-icon"></i>
+          <h2 class="card-title">Add / Remove</h2>
+          <p>Add a new culinary masterpiece or remove an existing one from the menu.</p>
+          <form action="{{ url_for('form') }}" method="get">
+            <button class="btn-action" type="submit">Manage Recipes</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-5">
+        <div class="action-card">
+          <i class="fa-solid fa-pen-to-square card-icon"></i>
+          <h2 class="card-title">Edit Recipe</h2>
+          <p>Tweak ingredients, update instructions, or change images for existing recipes.</p>
+          <form action="/editor/" method="get">
+            <button class="btn-action" type="submit">Edit Details</button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Script to generate floating background icons
+    const icons = ['fa-burger', 'fa-pizza-slice', 'fa-carrot', 'fa-apple-whole', 'fa-mug-hot', 'fa-ice-cream', 'fa-fish'];
+    const container = document.getElementById('bgAnimation');
+    
+    for(let i=0; i<20; i++) {
+      let icon = document.createElement('i');
+      icon.className = `fa-solid ${icons[Math.floor(Math.random() * icons.length)]} food-icon`;
+      icon.style.left = Math.random() * 100 + '%';
+      icon.style.animationDuration = (Math.random() * 10 + 10) + 's';
+      icon.style.animationDelay = (Math.random() * 5) + 's';
+      container.appendChild(icon);
+    }
+  </script>
+</body>
+</html>
