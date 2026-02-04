@@ -1,1225 +1,771 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session, abort, g
-import bcrypt
-import os, difflib, sys, threading, time,re
-from flask_mysqldb import MySQL
-from mysql.connector import MySQLConnection
-from jinja2 import ChoiceLoader, FileSystemLoader
-from bs4 import BeautifulSoup
-import traceback
-from datetime import datetime
-
-app = Flask(__name__, template_folder=os.path.abspath("templates"))
-app.jinja_loader = ChoiceLoader([
-    FileSystemLoader(os.path.abspath("templates")),
-    FileSystemLoader(os.path.abspath("main_files"))
-])
-
+import sqlite3
 import os
+import bcrypt
+import re
+from functools import wraps
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session, abort
+from werkzeug.utils import secure_filename
 
+# --- CONFIGURATION & PATHS ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_NAME = os.path.join(BASE_DIR, "recipebook.db")
+TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+UPLOAD_FOLDER = os.path.join(STATIC_DIR, 'images')
+
+app = Flask(__name__, template_folder=TEMPLATE_DIR)
 app.secret_key = "recipebook"
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Check if we are running on PythonAnywhere by looking for a specific folder
-if 'PYTHONANYWHERE_DOMAIN' in os.environ:
-    # --- WE ARE ON THE SERVER (PythonAnywhere) ---
-    
-    # Configuration for User Database
-    app.config['MYSQL_HOST'] = 'anandh49.mysql.pythonanywhere-services.com'  # Find this in the "Databases" tab
-    app.config['MYSQL_USER'] = 'anandh49'                                   # Your PythonAnywhere username
-    app.config['MYSQL_PASSWORD'] = 'YOUR_DB_PASSWORD'                         # The password you set in the "Databases" tab
-    app.config['MYSQL_DB'] = 'anandh49$userdb'                                # Format is: username$dbname
-    
-    # Configuration for Recipe Database
-    config1 = {
-        "host": "anandh49.mysql.pythonanywhere-services.com",
-        "user": "anandh49",
-        "password": "YOUR_DB_PASSWORD",
-        "database": "anandh49$recipes"
-    }
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
-else:
-    # --- WE ARE ON YOUR LAPTOP (Localhost) ---
-    
-    # Configuration for User Database
-    app.config['MYSQL_HOST'] = 'localhost'  
-    app.config['MYSQL_USER'] = 'root'
-    app.config['MYSQL_PASSWORD'] = 'smith49'  
-    app.config['MYSQL_DB'] = 'userdb' 
-    
-    # Configuration for Recipe Database
-    config1 = {
-        "host": "localhost",
-        "user": "root",
-        "password": "smith49",
-        "database": "recipes"
-    }
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+MEAL_TYPES = ["Breakfast", "Brunch", "Lunch", "Dessert", "Dinner", "Drinks"]
 
-# Initialize Connections (works for both now)
-mysql = MySQL(app)
-db = MySQLConnection(**config1)
-cursor = db.cursor()
-db.commit()
+# --- SECURITY DECORATOR ---
+def admin_required(f):
+    """Decorator to protect admin routes from unauthorized access."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('is_admin'):
+            flash("Access denied. Admin privileges required.", "danger")
+            return redirect(url_for('home'))
+        return f(*args, **kwargs)
+    return decorated_function
 
-cursor = db.cursor()
-db.commit()
+# --- DATABASE SETUP ---
+def get_db():
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    return conn
 
-TEMPLATE_DIR = "templates"
-allowed_pages = {file[:-5] for file in os.listdir(TEMPLATE_DIR) if file.endswith('.html')}
+def init_db():
+    conn = get_db()
+    cursor = conn.cursor()
 
-# Helper functions
-def get_recipe_image_url(recipe_name):
-    """Find image URL for recipe with any supported extension"""
-    static_images_dir = os.path.join(app.static_folder, 'images')
-    base_name = recipe_name.lower()
-    extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
-    
-    for ext in extensions:
-        image_path = os.path.join(static_images_dir, f"{base_name}{ext}")
-        if os.path.exists(image_path):
-            return f"/static/images/{base_name}{ext}"
-    
-    return "/static/images/default.jpg"
+    # 1. Users Table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        is_admin INTEGER DEFAULT 0
+    )''')
 
-def format_recipe_data(tables):
-    """Format recipe data while fixing case mismatch"""
-    return [
-        {
-            "name": table.capitalize(),  # Capitalize for display
-            "image_url": get_recipe_image_url(table),
-            # Generate URL with capitalized version but keep table name original
-            "url": url_for('show_page', page=table.capitalize())
-        }
-        for table in tables
-    ]
+    # Ensure admin user exists
+    cursor.execute("SELECT * FROM users WHERE is_admin = 1")
+    if not cursor.fetchone():
+        admin_pass = bcrypt.hashpw("admin123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        cursor.execute("INSERT INTO users (username, password, email, is_admin) VALUES (?, ?, ?, ?)",
+                       ("admin_secure", admin_pass, "admin@recipebook.com", 1))
 
-#login
+    # 2. Recipes Table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS recipes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        slug TEXT NOT NULL UNIQUE,
+        title TEXT NOT NULL,
+        description TEXT,
+        image_url TEXT,
+        video_url TEXT,
+        prep_time TEXT,
+        meal_type TEXT,
+        category TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+
+    # 3. Ingredients Table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS ingredients (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        recipe_id INTEGER,
+        item_text TEXT,
+        FOREIGN KEY(recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+    )''')
+
+    # 4. Instructions Table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS instructions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        recipe_id INTEGER,
+        step_text TEXT,
+        step_order INTEGER,
+        FOREIGN KEY(recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+    )''')
+
+    # 5. Nutrition Table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS nutrition (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        recipe_id INTEGER,
+        name TEXT,
+        value_text TEXT,
+        value_int INTEGER,
+        FOREIGN KEY(recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+    )''')
+
+    # 6. Extra Info
+    cursor.execute('''CREATE TABLE IF NOT EXISTS extra_info (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        recipe_id INTEGER,
+        info_type TEXT,
+        content TEXT,
+        FOREIGN KEY(recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+    )''')
+
+    # 7. Comments
+    cursor.execute('''CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        recipe_id INTEGER,
+        comment TEXT,
+        username TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+    )''')
+
+    # 8. Likes
+    cursor.execute('''CREATE TABLE IF NOT EXISTS likes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        recipe_id INTEGER,
+        username TEXT,
+        UNIQUE(recipe_id, username),
+        FOREIGN KEY(recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+    )''')
+
+    conn.commit()
+    conn.close()
+
+init_db()
+
+# --- HELPER FUNCTIONS ---
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def extract_int(text):
+    if not text: return 0
+    nums = re.findall(r"\d+", text)
+    return int(nums[0]) if nums else 0
+
+def create_slug(title):
+    return title.lower().strip().replace(" ", "-").replace("_", "-")
+
+def get_recipe_full_data(recipe_id):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT item_text FROM ingredients WHERE recipe_id=?", (recipe_id,))
+    ingredients = [r['item_text'] for r in cur.fetchall()]
+    cur.execute("SELECT step_text FROM instructions WHERE recipe_id=? ORDER BY step_order ASC", (recipe_id,))
+    instructions = [r['step_text'] for r in cur.fetchall()]
+    cur.execute("SELECT name, value_text FROM nutrition WHERE recipe_id=?", (recipe_id,))
+    nutrition = {r['name']: r['value_text'] for r in cur.fetchall()}
+    cur.execute("SELECT content FROM extra_info WHERE recipe_id=? AND info_type='fun'", (recipe_id,))
+    fun_facts = [r['content'] for r in cur.fetchall()]
+    cur.execute("SELECT content FROM extra_info WHERE recipe_id=? AND info_type='tip'", (recipe_id,))
+    tips = [r['content'] for r in cur.fetchall()]
+    conn.close()
+    return {'ingredients': ingredients, 'instructions': instructions, 'nutrition': nutrition, 'fun_facts': fun_facts, 'tips': tips}
+
+# --- AUTH ROUTES ---
 @app.route('/')
 def home():
     return render_template('login.html')
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'GET': return redirect(url_for('home'))
     username = request.form['username']
     password = request.form['password']
-    if username == 'admin' and password == 't1':
-        session['admin'] = True
-        return redirect(url_for('admin_dashboard'))
-    
-    cur = mysql.connection.cursor()
-    cur.execute('SELECT * FROM users WHERE username = %s', (username,))
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM users WHERE LOWER(username) = LOWER(?)', (username,))
     user = cur.fetchone()
-    cur.close()
-    if user and bcrypt.checkpw(password.encode('utf-8'), user[2].encode('utf-8')):
-        session['user_id'] = user[0]
-        session['username'] = user[1]
+    conn.close()
+
+    if user and bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
+        session['user_id'] = user['id']
+        session['username'] = user['username']
+        session['is_admin'] = (user['is_admin'] == 1)
+
+        if session['is_admin']:
+            return redirect(url_for('admin_dashboard'))
         return redirect(url_for('main'))
     else:
-        flash('Invalid credentials. Please try again.', 'danger')
+        flash('Invalid username or password.', 'danger')
         return redirect(url_for('home'))
 
-#register
-@app.route('/register')
+@app.route('/register', methods=['GET', 'POST'])
 def register():
-    return render_template('register.html')
-
-@app.route('/register', methods=['POST'])
-def register_user():
+    if request.method == 'GET': return render_template('register.html')
     email = request.form['email']
     username = request.form['username']
     password = request.form['password']
-    
-    # Enhanced Email validation
-    if '@' not in email or ('.com' not in email and '.ac.in' not in email):
-        flash('Please enter a valid email address (must contain @ and end with .com or .ac.in)', 'danger')
-        return redirect(url_for('register'))
-    
-    # Password length validation
-    if len(password) < 6:
-        flash('Password must be at least 6 characters long', 'danger')
-        return redirect(url_for('register'))
-    
-    # Password complexity validation
-    has_number = any(char.isdigit() for char in password)
-    has_upper = any(char.isupper() for char in password)
-    if not has_number or not has_upper:
-        flash('Password must contain at least 1 number and 1 capital letter', 'danger')
-        return redirect(url_for('register'))
-
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-    cur = mysql.connection.cursor()
+    conn = get_db()
     try:
-        # Check for existing username
-        cur.execute('SELECT * FROM users WHERE username = %s', (username,))
-        existing_user = cur.fetchone()
-        if existing_user:
-            flash('Username already exists, try a different one.', 'danger')
-            return redirect(url_for('register'))
-        
-        # Check for existing email
-        cur.execute('SELECT * FROM users WHERE email = %s', (email,))
-        existing_email = cur.fetchone()
-        if existing_email:
-            flash('Email already exists, try a different one.', 'danger')
-            return redirect(url_for('register'))
-
-        # Insert new user
-        cur.execute('INSERT INTO users (username, password, email) VALUES (%s, %s, %s)', 
-                   (username, hashed_password, email))
-        mysql.connection.commit()
-        
-        flash('Registration successful! You can now log in.', 'success')
+        conn.execute('INSERT INTO users (username, password, email, is_admin) VALUES (?, ?, ?, ?)', (username, hashed_password, email, 0))
+        conn.commit()
         return redirect(url_for('home'))
-        
     except Exception as e:
-        mysql.connection.rollback()
-        flash('An error occurred during registration. Please try again.', 'danger')
+        flash("Registration failed. Email or Username may already exist.", "danger")
         return redirect(url_for('register'))
-        
     finally:
-        cur.close()
+        conn.close()
 
-
-#forgot pass
-@app.route('/forgot', methods=['GET'])
-def forgot_page():
-    return render_template('forgot.html')
-
-@app.route('/forgot', methods=['POST'])
+@app.route('/forgot', methods=['GET', 'POST'])
 def forgot():
-    email = request.form['email']
-    pass1 = request.form['username']
-    pass2 = request.form['password'] 
-    if pass1 != pass2:
-        flash("Passwords do not match.", "error") 
+    if request.method == 'GET': return render_template('forgot.html')
+    email = request.form.get('email')
+    new_pass = request.form.get('new_password')
+    confirm_pass = request.form.get('confirm_password')
+    if new_pass != confirm_pass:
+        flash("Passwords do not match.", "danger")
         return redirect(url_for('forgot'))
-    hashed_pass1 = bcrypt.hashpw(pass1.encode('utf-8'), bcrypt.gensalt()).decode('utf-8') 
-    cur = mysql.connection.cursor()
-    cur.execute('SELECT * FROM users WHERE email= %s', (email,))
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', (email,))
     user = cur.fetchone()
     if user:
-        cur.execute('UPDATE users SET password = %s WHERE email = %s', (hashed_pass1, email))
-        mysql.connection.commit()
-        flash("Password updated successfully.", "success") 
-        return redirect(url_for('login'))
+        hashed_password = bcrypt.hashpw(new_pass.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        cur.execute('UPDATE users SET password = ? WHERE id = ?', (hashed_password, user['id']))
+        conn.commit()
+        conn.close()
+        flash("Password updated successfully. Please login.", "success")
+        return redirect(url_for('home'))
     else:
-        flash("Email Not found!.", "error") 
-        return render_template('forgot.html')
-        
+        conn.close()
+        flash("Email not found!", "danger")
+        return redirect(url_for('forgot'))
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('home'))
+
+# --- MAIN ROUTES ---
 @app.route('/main')
 def main():
-    if 'user_id' not in session:
-        return redirect(url_for('home'))  
-    
-    username = session['username'] 
-    return render_template('main.html', username=username)
+    if 'user_id' not in session: return redirect(url_for('home'))
+    conn = get_db()
+    categories = ['Dessert', 'Breakfast', 'Lunch', 'Dinner', 'Drinks']
+    menu_data = {}
+    image_dir = os.path.join(STATIC_DIR, 'images')
+    for cat in categories:
+        cur = conn.execute("SELECT * FROM recipes WHERE meal_type = ? ORDER BY created_at DESC LIMIT 3", (cat,))
+        recipes = cur.fetchall()
+        processed_recipes = []
+        for r in recipes:
+            r_dict = dict(r)
+            if r_dict.get('image_url') and not r_dict['image_url'].startswith('http'):
+                 r_dict['image_url'] = url_for('static', filename=f'images/{r_dict["image_url"]}')
+            else:
+                target_title = r_dict['title'].lower().strip()
+                found_image = None
+                if os.path.exists(image_dir):
+                    for filename in os.listdir(image_dir):
+                        if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                            file_base = os.path.splitext(filename)[0].lower().strip()
+                            if file_base == target_title:
+                                found_image = filename
+                                break
+                if found_image:
+                    r_dict['image_url'] = url_for('static', filename=f'images/{found_image}')
+            processed_recipes.append(r_dict)
+        menu_data[cat] = processed_recipes
+    conn.close()
+    return render_template('main.html', username=session['username'], menu=menu_data)
 
-#search section
+# MODIFIED: Veg/Non-Veg Logic updated to normalize category and exclude Drinks/Dessert
+@app.route('/category/<category_name>')
+def show_category(category_name):
+    if 'user_id' not in session: return redirect(url_for('home'))
+    conn = get_db()
+    
+    db_cat = category_name.lower()
+    if db_cat in ['veg', 'nonveg']:
+        # Ensure category matches DB exactly and filters out specific meal types
+        recipes = conn.execute("""
+            SELECT * FROM recipes 
+            WHERE category = ? 
+            AND meal_type NOT IN ('Drinks', 'Dessert') 
+            COLLATE NOCASE""", (db_cat,)).fetchall()
+        display_name = "Vegetarian" if db_cat == 'veg' else "Non-Vegetarian"
+    else:
+        recipes = conn.execute("SELECT * FROM recipes WHERE meal_type = ? COLLATE NOCASE", (category_name,)).fetchall()
+        display_name = category_name.capitalize()
+        
+    image_dir = os.path.join(STATIC_DIR, 'images')
+    processed_recipes = []
+    for r in recipes:
+        r_dict = dict(r)
+        if r_dict.get('image_url') and not r_dict['image_url'].startswith('http'):
+             r_dict['image_url'] = url_for('static', filename=f'images/{r_dict["image_url"]}')
+        else:
+            target_title = r_dict['title'].lower().strip()
+            found_image = None
+            if os.path.exists(image_dir):
+                for filename in os.listdir(image_dir):
+                    if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                        file_base = os.path.splitext(filename)[0].lower().strip()
+                        if file_base == target_title:
+                            found_image = filename
+                            break
+            if found_image:
+                r_dict['image_url'] = url_for('static', filename=f'images/{found_image}')
+        processed_recipes.append(r_dict)
+    conn.close()
+    return render_template('category_list.html', category_name=display_name, recipes=processed_recipes)
+
+@app.route('/recipe/<slug>', methods=['GET', 'POST'])
+def show_page(slug):
+    if slug in ['ingredients', 'category', 'filtered_recipes', 'liked', 'admin', 'editor', 'about']:
+        if slug == 'admin': return redirect(url_for('admin_dashboard'))
+        if slug == 'editor': return redirect(url_for('editor_dashboard'))
+        if slug == 'liked': return redirect(url_for('liked_recipes'))
+        return render_template(f'{slug}.html')
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM recipes WHERE slug = ?", (slug,))
+    recipe = cur.fetchone()
+    if not recipe:
+        conn.close()
+        abort(404)
+    if request.method == 'POST':
+        if 'username' in session:
+            cur.execute("INSERT INTO comments (recipe_id, comment, username) VALUES (?, ?, ?)",
+                        (recipe['id'], request.form.get('comment'), session['username']))
+            conn.commit()
+            return redirect(url_for('show_page', slug=slug))
+        else:
+            return redirect(url_for('home'))
+    details = get_recipe_full_data(recipe['id'])
+    cur.execute("SELECT * FROM comments WHERE recipe_id = ? ORDER BY timestamp DESC", (recipe['id'],))
+    comments = cur.fetchall()
+    conn.close()
+    recipe_data = dict(recipe)
+    original_image = recipe['image_url']
+    target_title = recipe['title'].lower().strip()
+    image_dir = os.path.join(STATIC_DIR, 'images')
+    found_image = None
+    if os.path.exists(image_dir):
+        for filename in os.listdir(image_dir):
+            if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                file_base = os.path.splitext(filename)[0].lower().strip()
+                if file_base == target_title:
+                    found_image = filename
+                    break
+    if found_image:
+        recipe_data['image_url'] = url_for('static', filename=f'images/{found_image}')
+    else:
+        recipe_data['image_url'] = original_image
+    return render_template('recipe_detail.html', recipe=recipe_data, original_image=original_image, ingredients=details['ingredients'], instructions=details['instructions'], nutrition=details['nutrition'], fun_facts=details['fun_facts'], tips=details['tips'], comments=comments, user=session.get('username'), is_admin=session.get('is_admin'))
+
+@app.route('/delete_comment/<int:comment_id>', methods=['POST'])
+def delete_comment(comment_id):
+    if 'username' not in session: return jsonify({'success': False}), 401
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT username FROM comments WHERE id = ?", (comment_id,))
+    row = cur.fetchone()
+    if row:
+        is_owner = (row['username'] == session['username'])
+        is_admin = session.get('is_admin') == True
+        if is_owner or is_admin:
+            cur.execute("DELETE FROM comments WHERE id = ?", (comment_id,))
+            conn.commit()
+            conn.close()
+            return jsonify({'success': True})
+    conn.close()
+    return jsonify({'success': False}), 403
+
+# --- PROTECTED ADMIN ROUTES ---
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    return render_template('admin.html')
+
+@app.route('/editor')
+@admin_required
+def editor_dashboard():
+    conn = get_db()
+    recipes = conn.execute("SELECT title FROM recipes ORDER BY title ASC").fetchall()
+    conn.close()
+    files = [r['title'] for r in recipes]
+    return render_template('edit.html', files=files, data=None)
+
+@app.route('/add_recipe', methods=['GET', 'POST'])
+@admin_required
+def add_recipe():
+    if request.method == 'GET':
+        return render_template('form.html')
+
+    slug_base = request.form.get('recipe_name', 'Untitled')
+    title = request.form.get('head', slug_base)
+    slug = create_slug(slug_base)
+
+    try:
+        meal_idx = int(request.form.get('meal-type', 0))
+        meal_type = MEAL_TYPES[meal_idx]
+    except:
+        meal_type = "Breakfast"
+    category = request.form.get('category', 'veg')
+
+    image_url_for_db = request.form.get('image', '')
+    file = request.files.get('image_file')
+    if file and allowed_file(file.filename):
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        new_filename = f"{title}.{ext}"
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], new_filename))
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if cur.execute("SELECT id FROM recipes WHERE slug = ?", (slug,)).fetchone():
+            flash("Recipe ID already exists.", "warning")
+            return redirect(url_for('add_recipe'))
+        cur.execute('''INSERT INTO recipes (slug, title, description, image_url, video_url, prep_time, meal_type, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', (slug, title, request.form.get('description'), image_url_for_db, request.form.get('video'), request.form.get('time'), meal_type, category))
+        recipe_id = cur.lastrowid
+        for line in request.form.get('ingredients', '').splitlines():
+            if line.strip(): cur.execute("INSERT INTO ingredients (recipe_id, item_text) VALUES (?, ?)", (recipe_id, line.strip()))
+        for idx, line in enumerate(request.form.get('instructions', '').splitlines()):
+            if line.strip(): cur.execute("INSERT INTO instructions (recipe_id, step_text, step_order) VALUES (?, ?, ?)", (recipe_id, line.strip(), idx+1))
+        for line in request.form.get('nutrition', '').splitlines():
+            if ':' in line:
+                name, val = line.split(':', 1)
+                cur.execute("INSERT INTO nutrition (recipe_id, name, value_text, value_int) VALUES (?, ?, ?, ?)", (recipe_id, name.strip(), val.strip(), extract_int(val)))
+            elif line.strip():
+                 cur.execute("INSERT INTO nutrition (recipe_id, name, value_text, value_int) VALUES (?, ?, ?, ?)", (recipe_id, "Note", line.strip(), 0))
+        for line in request.form.get('fun', '').splitlines():
+            if line.strip(): cur.execute("INSERT INTO extra_info (recipe_id, info_type, content) VALUES (?, 'fun', ?)", (recipe_id, line.strip()))
+        for line in request.form.get('tips', '').splitlines():
+            if line.strip(): cur.execute("INSERT INTO extra_info (recipe_id, info_type, content) VALUES (?, 'tip', ?)", (recipe_id, line.strip()))
+        conn.commit()
+        flash("Recipe Added Successfully!", "success")
+        return redirect(url_for('add_recipe'))
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error: {e}", "danger")
+        return redirect(url_for('add_recipe'))
+    finally:
+        conn.close()
+
+@app.route('/edit', methods=['POST'])
+@admin_required
+def edit_recipe_load():
+    target_title = request.form.get('filename')
+    conn = get_db()
+    cur = conn.cursor()
+    recipe = cur.execute("SELECT * FROM recipes WHERE title = ?", (target_title,)).fetchone()
+    if not recipe:
+        flash("Recipe not found", "danger")
+        return redirect(url_for('editor_dashboard'))
+    rid = recipe['id']
+    ings = [r['item_text'] for r in cur.execute("SELECT item_text FROM ingredients WHERE recipe_id=?", (rid,)).fetchall()]
+    insts = [r['step_text'] for r in cur.execute("SELECT step_text FROM instructions WHERE recipe_id=? ORDER BY step_order", (rid,)).fetchall()]
+    nuts = []
+    for r in cur.execute("SELECT name, value_text FROM nutrition WHERE recipe_id=?", (rid,)).fetchall():
+        nuts.append(f"{r['name']}: {r['value_text']}")
+    funs = [r['content'] for r in cur.execute("SELECT content FROM extra_info WHERE recipe_id=? AND info_type='fun'", (rid,)).fetchall()]
+    tips = [r['content'] for r in cur.execute("SELECT content FROM extra_info WHERE recipe_id=? AND info_type='tip'", (rid,)).fetchall()]
+    try:
+        meal_idx = MEAL_TYPES.index(recipe['meal_type'])
+    except:
+        meal_idx = 0
+    data = {'head': recipe['title'], 'image': recipe['image_url'], 'video': recipe['video_url'], 'time': recipe['prep_time'], 'description': recipe['description'], 'meal_type': recipe['meal_type'], 'meal_idx': meal_idx, 'ingredients': "\n".join(ings), 'instructions': "\n".join(insts), 'nutrition': "\n".join(nuts), 'fun': "\n".join(funs), 'tips': "\n".join(tips)}
+    conn.close()
+    return render_template('edit.html', data=data, filename=recipe['slug'])
+
+@app.route('/save', methods=['POST'])
+@admin_required
+def save_recipe_changes():
+    slug = request.form.get('filename')
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        row = cur.execute("SELECT id, image_url FROM recipes WHERE slug=?", (slug,)).fetchone()
+        if not row: raise Exception("Recipe ID lost.")
+        rid = row['id']
+        current_db_image = row['image_url']
+        try:
+            meal_idx = int(request.form.get('meal-type', 0))
+            meal_type = MEAL_TYPES[meal_idx]
+        except: meal_type = "Breakfast"
+
+        new_title = request.form.get('head')
+        new_db_image = current_db_image
+        if request.form.get('image'):
+            new_db_image = request.form.get('image')
+
+        file = request.files.get('image_file')
+        if file and allowed_file(file.filename):
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            new_filename = f"{new_title}.{ext}"
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], new_filename))
+
+        cur.execute("""UPDATE recipes SET title=?, description=?, image_url=?, video_url=?, prep_time=?, meal_type=? WHERE id=?""", (new_title, request.form.get('description'), new_db_image, request.form.get('video'), request.form.get('time'), meal_type, rid))
+        cur.execute("DELETE FROM ingredients WHERE recipe_id=?", (rid,))
+        for line in request.form.get('ingredients', '').splitlines():
+            if line.strip(): cur.execute("INSERT INTO ingredients (recipe_id, item_text) VALUES (?, ?)", (rid, line.strip()))
+        cur.execute("DELETE FROM instructions WHERE recipe_id=?", (rid,))
+        for idx, line in enumerate(request.form.get('instructions', '').splitlines()):
+            if line.strip(): cur.execute("INSERT INTO instructions (recipe_id, step_text, step_order) VALUES (?, ?, ?)", (rid, line.strip(), idx+1))
+        cur.execute("DELETE FROM nutrition WHERE recipe_id=?", (rid,))
+        for line in request.form.get('nutrition', '').splitlines():
+            if ':' in line:
+                name, val = line.split(':', 1)
+                cur.execute("INSERT INTO nutrition (recipe_id, name, value_text, value_int) VALUES (?, ?, ?, ?)", (rid, name.strip(), val.strip(), extract_int(val)))
+            elif line.strip():
+                 cur.execute("INSERT INTO nutrition (recipe_id, name, value_text, value_int) VALUES (?, ?, ?, ?)", (rid, "Note", line.strip(), 0))
+        cur.execute("DELETE FROM extra_info WHERE recipe_id=?", (rid,))
+        for line in request.form.get('fun', '').splitlines():
+            if line.strip(): cur.execute("INSERT INTO extra_info (recipe_id, info_type, content) VALUES (?, 'fun', ?)", (rid, line.strip()))
+        for line in request.form.get('tips', '').splitlines():
+            if line.strip(): cur.execute("INSERT INTO extra_info (recipe_id, info_type, content) VALUES (?, 'tip', ?)", (rid, line.strip()))
+        conn.commit()
+        flash("Changes Saved!", "success")
+        return redirect(url_for('show_page', slug=slug))
+    except Exception as e:
+        conn.rollback()
+        flash(f"Save failed: {e}", "danger")
+        return redirect(url_for('editor_dashboard'))
+    finally:
+        conn.close()
+
+@app.route('/delete_recipe', methods=['POST'])
+@admin_required
+def delete_recipe():
+    recipe_name = request.form.get('recipe_name')
+    conn = get_db()
+    conn.execute("DELETE FROM recipes WHERE title=? OR slug=?", (recipe_name, create_slug(recipe_name)))
+    conn.commit()
+    conn.close()
+    flash("Recipe Deleted.", "warning")
+    return redirect(url_for('add_recipe'))
+
+# --- PUBLIC INTERACTIVE ROUTES ---
 @app.route('/submit', methods=['POST'])
 def submit():
     data = request.get_json()
-    search_query = data.get("search")
-    return search_recipe(search_query, cursor, allowed_pages)
-@app.route('/<page>')
-def show_page(page):
-    if page in allowed_pages:
-        return render_template(f'{page}.html')
-    else:
-        abort(404)
-         
+    query = data.get("search", "").strip()
+    conn = get_db()
+    recipes = conn.execute("SELECT * FROM recipes WHERE title LIKE ?", (f"%{query}%",)).fetchall()
+    conn.close()
+    if not recipes: return jsonify({"message": "Sorry, Recipe Not Found!"}), 404
+    if len(recipes) == 1: return jsonify({"redirect": url_for('show_page', slug=recipes[0]['slug'])})
+    options = [r['slug'] for r in recipes]
+    query_params = "&".join([f"options={opt}" for opt in options])
+    return jsonify({"redirect": url_for('options_page') + "?" + query_params})
+
 @app.route('/options')
 def options_page():
-    options = request.args.getlist('options')
-    recipes = [
-        {
-            "name": option.replace('_', ' ').title(),  # Proper capitalization
-            "url": url_for('show_page', page=option),
-            "image": url_for('static', filename=f'images/{option.capitalize()}.png'),  # Image based on table name
-            "default_image": url_for('static', filename='images/default.jpg')
-        }
-        for option in options
-    ]
-    return render_template('options.html', recipes=recipes)
+    slugs = request.args.getlist('options')
+    conn = get_db()
+    placeholders = ','.join(['?'] * len(slugs))
+    recipes = conn.execute(f"SELECT * FROM recipes WHERE slug IN ({placeholders})", slugs).fetchall()
+    conn.close()
+    formatted_recipes = [{"name": r['title'], "url": url_for('show_page', slug=r['slug']), "image": r['image_url']} for r in recipes]
+    return render_template('options.html', recipes=formatted_recipes)
 
-def search_recipe(search_query, cursor, allowed_pages):
-    if search_query:
-        search_query = search_query.strip().lower().replace(" ", "")
-
-        cursor.execute("SHOW TABLES FROM recipes")
-        all_queries = [row[0] for row in cursor.fetchall()]
-        
-        # 🔹 Normalize table names
-        normalized_tables = {
-            table.lower().replace(" ", ""): table for table in all_queries
-        }
-
-        # 🔹 Check for exact match
-        if search_query in normalized_tables:
-            exact_match = [normalized_tables[search_query]]
-        else:
-            exact_match = []
-
-        # 🔹 If no exact match, try partial match
-        if not exact_match:
-            similar_tables = difflib.get_close_matches(search_query, normalized_tables.keys(), n=5, cutoff=0.4)
-            exact_match = [normalized_tables[match] for match in similar_tables]
-
-        # 🔹 If still no match, return 404
-        if not exact_match:
-            return jsonify({"message": "Sorry, Recipe Not Found!"}), 404
-
-        # 🔹 If exactly one matching recipe is found, redirect directly
-        if len(exact_match) == 1:
-            capitalized_recipe = exact_match[0].capitalize()  # Ensure first letter is capitalized
-            return jsonify({"redirect": url_for('show_page', page=capitalized_recipe)})
-
-        # 🔹 If multiple matches, properly format options
-        formatted_options = [opt.capitalize() for opt in exact_match]  # Capitalizing first letter
-        query_params = "&".join([f"options={opt}" for opt in formatted_options])
-        
-        return jsonify({"redirect": url_for('options_page') + "?" + query_params})
-
-    return jsonify({"message": "Invalid input"}), 400
-
-#ingredients based search
-@app.route('/ingredients')
-def select_ingredients():
-    return render_template("ingredients.html")
-
+# --- MODIFIED: ADVANCED INGREDIENTS SEARCH (AND logic) ---
 @app.route('/find_recipes', methods=['POST'])
 def find_recipes():
-    try:
-        data = request.get_json()
-        selected_ingredients = [ing.lower().strip() for ing in data.get('ingredients', [])]
+    data = request.get_json()
+    selected_ingredients = [ing.lower().strip() for ing in data.get('ingredients', []) if ing.strip()]
+    if not selected_ingredients:
+        return jsonify({'success': False, 'message': 'Select at least one ingredient.'}), 400
+    
+    conn = get_db()
+    
+    # Step 1: Find candidates containing ANY of the selected items to reduce the workload
+    placeholders = ' OR '.join(['i.item_text LIKE ?'] * len(selected_ingredients))
+    search_terms = [f"%{ing}%" for ing in selected_ingredients]
+    
+    query = f"""
+        SELECT DISTINCT r.id, r.title, r.slug, r.image_url 
+        FROM recipes r
+        JOIN ingredients i ON r.id = i.recipe_id
+        WHERE {placeholders}
+    """
+    
+    cursor = conn.execute(query, search_terms)
+    candidates = cursor.fetchall()
+    
+    if not candidates:
+        conn.close()
+        return jsonify({'success': False, 'message': 'No recipes found matching these ingredients.'})
+
+    results = []
+    image_dir = os.path.join(STATIC_DIR, 'images')
+    
+    for row in candidates:
+        rid = row['id']
+        title = row['title']
         
-        if not selected_ingredients:
-            return jsonify({'success': False, 'message': 'Please select at least one ingredient.'}), 400
+        # Get ALL ingredients for this candidate recipe
+        cur_ing = conn.execute("SELECT item_text FROM ingredients WHERE recipe_id = ?", (rid,))
+        db_ingredients = [r['item_text'].lower() for r in cur_ing.fetchall()]
         
-        cursor.execute("SHOW TABLES")
-        recipe_tables = [row[0] for row in cursor.fetchall()]
+        # MODIFIED: Check for AND logic (Recipe must contain ALL selected ingredients)
+        all_selected_matched = True
+        for user_ing in selected_ingredients:
+            found_match = False
+            for db_ing in db_ingredients:
+                if user_ing in db_ing:
+                    found_match = True
+                    break
+            if not found_match:
+                all_selected_matched = False
+                break
         
-        matching_recipes = []
-        
-        for table in recipe_tables:
-            try:
-                cursor.execute(f"SHOW COLUMNS FROM `{table}` LIKE 'ingredient'")
-                if not cursor.fetchone():
-                    continue
-                
-                conditions = []
-                params = []
-                for ingredient in selected_ingredients:
-                    conditions.append("LOWER(TRIM(ingredient)) LIKE %s")
-                    params.append(f"%{ingredient}%")
-                
-                query = f"""
-                    SELECT COUNT(DISTINCT ingredient) as matches
-                    FROM `{table}`
-                    WHERE {' OR '.join(conditions)}
-                """
-                
-                cursor.execute(query, params)
-                match_count = cursor.fetchone()[0]
-                
-                if match_count >= len(selected_ingredients):
-                    # Format name for display and URL
-                    display_name = ' '.join(word.capitalize() for word in table.split('_'))
-                    html_page = f"{display_name}"
-                    
-                    matching_recipes.append({
-                        'display_name': display_name,  
-                        'html_page': html_page,      
-                        'image': f"/static/images/{table}.png",
-                        'default_image': "/static/images/default.png"
-                    })
-                        
-            except Exception as e:
-                print(f"Error processing table {table}: {str(e)}")
-                continue
-        
-        if not matching_recipes:
-            return jsonify({'success': False, 'message': 'No recipes found with all selected ingredients!'}), 404
-        
-        return jsonify({
-            'success': True,
-            'recipes': matching_recipes
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'An error occurred: {str(e)}'
-        }), 500
-#recommendation system
-def get_db_cursor():
-    return cursor
-
-def get_all_recipes():
-    cursor = get_db_cursor()
-    cursor.execute("SHOW TABLES") 
-    return [row[0] for row in cursor.fetchall()]
-
-def get_related_recipes(page):
-    all_recipes = get_all_recipes()
-    similar_recipes = difflib.get_close_matches(page, all_recipes, n=5, cutoff=0.4)
-    return [recipe for recipe in similar_recipes if recipe.lower() != page.lower()]
-
-@app.route('/get_related_recipes/<page>')
-def fetch_related_recipes(page):
-    related = get_related_recipes(page)
-    formatted_related = format_recipe_data(related)
-    return jsonify(formatted_related)
-
-#comment section
-@app.route('/<recipe_name>', methods=['GET', 'POST'])
-def recipe(recipe_name):
-    if request.method == 'POST':
-        comment = request.form['comment']
-        username = session['username']
-        with mysql.connection.cursor() as cur:
-            cur.execute(
-                "INSERT INTO comments (recipe_name, comment, username, timestamp) VALUES (%s, %s, %s, NOW())", 
-                (recipe_name, comment, username)
-            )
-            mysql.connection.commit()
-        return redirect(url_for('recipe', recipe_name=recipe_name))
-    
-    with mysql.connection.cursor() as cur:
-        cur.execute("""
-            SELECT username, comment, 
-                   DATE_FORMAT(timestamp, '%M %d, %Y at %h:%i %p') as formatted_time
-            FROM comments 
-            WHERE recipe_name = %s 
-            ORDER BY timestamp DESC
-        """, (recipe_name,))
-        comments = [{"user": row[0], "comment": row[1], "timestamp": row[2]} for row in cur.fetchall()]
-    
-    return render_template(f'{recipe_name}.html', recipe_name=recipe_name, comments=comments)
-
-@app.route('/get_comments/<recipe_name>')
-def get_comments(recipe_name):
-    current_user = session.get('username', None)
-    app.logger.info(f"Fetching comments for recipe: {recipe_name}")
-    with mysql.connection.cursor() as cur:
-        cur.execute("SELECT id, username, comment, timestamp FROM comments WHERE recipe_name = %s ORDER BY timestamp DESC", (recipe_name,))
-        comments = []
-        for row in cur.fetchall():
-            try:
-                # If timestamp is a string, parse it first
-                if isinstance(row[3], str):
-                    timestamp = datetime.strptime(row[3], '%Y-%m-%d %H:%M:%S')
-                else:
-                    timestamp = row[3]
-                comments.append({
-                    "id": row[0],
-                    "user": row[1],
-                    "comment": row[2],
-                    "timestamp": timestamp.strftime('%B %d, %Y at %I:%M %p'),
-                    "canDelete": current_user and (current_user == row[1])
-                })
-            except Exception as e:
-                app.logger.error(f"Error formatting timestamp: {e}")
-                comments.append({
-                    "id": row[0],
-                    "user": row[0],
-                    "comment": row[1],
-                    "timestamp": "Unknown time",
-                    "canDelete": current_user and (current_user == row[1])
-                })
-    return jsonify(comments)
-@app.route('/delete_comment/<int:comment_id>', methods=['POST'])
-def delete_comment(comment_id):
-    if 'username' not in session:
-        return jsonify({'success': False, 'error': 'Not logged in'}), 401
-    
-    with mysql.connection.cursor() as cur:
-        # First check if the comment belongs to the current user
-        cur.execute("SELECT username FROM comments WHERE id = %s", (comment_id,))
-        result = cur.fetchone()
-        
-        if not result:
-            return jsonify({'success': False, 'error': 'Comment not found'}), 404
-        
-        if result[0] != session['username']:
-            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-        
-        # If it does belong to the user, delete it
-        cur.execute("DELETE FROM comments WHERE id = %s", (comment_id,))
-        mysql.connection.commit()
-    
-    return jsonify({'success': True})
-#admin panel
-@app.route('/form')
-def form():
-    return render_template('form.html')
-
-@app.route('/about')
-def about():
-    return render_template('about.html')
-
-@app.route('/admin')
-def admin_dashboard():
-    if not session.get('admin'):
-        return redirect(url_for('home'))
-    return render_template('admin.html')
-
-@app.route('/add_recipe', methods=['POST'])
-def add_recipe():
-    if not session.get('admin'):
-        return redirect(url_for('home'))
-    
-    recipe_name = request.form.get("recipe_name").strip()
-    if not recipe_name:
-        flash("Recipe name cannot be empty!", "error")
-        return redirect(url_for("admin_dashboard"))
-    category = request.form.get("category")
-    if not category:
-        flash("Please select a category (Veg or NonVeg)!", "error")
-        return redirect(url_for("admin_dashboard"))
-    
-    filename = recipe_name + ".html"
-    template_file = os.path.join(TEMPLATE_DIR, "tes.html")
-    
-    if not os.path.exists(template_file):
-        flash("Template file not found!", "error")
-        return redirect(url_for("admin_dashboard"))
-    
-    with open(template_file, "r", encoding="utf-8") as f:
-        new_content = f.read()
-        
-    def format_as_list(text):
-        lines = text.strip().split("\n")
-        formatted_lines = []
-        for line in lines:
-            if line.strip():
-                cleaned_line = re.sub(r'^\s*\d+[.)]\s*', '', line.strip())
-                formatted_lines.append(f"<li><i class='bi bi-check-circle-fill'></i> <span>{cleaned_line}</span></li>")
-        return "<ul>" + "".join(formatted_lines) + "</ul>"
-    
-    replacements = {
-        "{{recipe_name}}": recipe_name,
-        "{{head}}": request.form.get("head"),
-        "{{image}}": request.form.get("image"),
-        "{{description}}": request.form.get("description"),
-        "{{time}}": request.form.get("time"),
-        "{{ingredients}}": format_as_list(request.form.get("ingredients", "")),
-        "{{nutrition}}": format_as_list(request.form.get("nutrition", "")),
-        "{{instructions}}": format_as_list(request.form.get("instructions", "")),
-        "{{tips}}": format_as_list(request.form.get("tips")),
-        "{{fun}}": format_as_list(request.form.get("fun")),
-        "{{video}}": request.form.get("video"),
-        "{{meal_type}}": get_meal_type(request.form.get("meal-type"))
-    }
-    for key, value in replacements.items():
-        new_content = new_content.replace(key, value)
-    
-    with open(os.path.join(TEMPLATE_DIR, filename), "w", encoding="utf-8") as f:
-        f.write(new_content)
-    
-    # Create the table with an additional flag column for metadata
-    cursor.execute(f"""
-        CREATE TABLE IF NOT EXISTS `{recipe_name}` (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            ingredient VARCHAR(255),
-            time VARCHAR(50),
-            nutrition VARCHAR(50),
-            value VARCHAR(50),
-            category VARCHAR(50),
-            meal_type VARCHAR(50),
-            is_metadata BOOLEAN DEFAULT FALSE
-        )
-    """)
-    
-    # Get form data
-    ingredients = request.form.get("ingredients").strip().split("\n")
-    time_value = request.form.get("time").strip()
-    nutrition_data = request.form.get("nutrition").strip().split("\n")
-    category = request.form.get("category")
-    meal_type = get_meal_type(request.form.get("meal-type"))
-    
-    # First insert metadata (time, category, meal_type) as a single record
-    cursor.execute(f"""
-        INSERT INTO `{recipe_name}` 
-        (time, category, meal_type, is_metadata)
-        VALUES (%s, %s, %s, TRUE)
-    """, (time_value, category, meal_type))
-    
-    # Then insert all ingredients with their nutrition data
-    for i, ingredient in enumerate(ingredients):
-        if ingredient.strip():
-            nutrition_name, nutrition_value = "", ""
-            if i < len(nutrition_data):
-                parts = nutrition_data[i].strip().split(":")
-                if len(parts) == 2:
-                    nutrition_name = parts[0].strip()
-                    nutrition_value = parts[1].strip()
-            
-            cursor.execute(f"""
-                INSERT INTO `{recipe_name}` 
-                (ingredient, nutrition, value, is_metadata)
-                VALUES (%s, %s, %s, FALSE)
-            """, (ingredient.strip(), nutrition_name, nutrition_value))
-    
-    db.commit()
-    flash("Recipe added successfully!", "success")
-    threading.Thread(target=restart_server, daemon=True).start()
-    return redirect(url_for('form'))
-
-def get_meal_type(value):
-    meal_types = ["Breakfast", "Brunch", "Lunch","Dessert","Dinner","Drinks"]
-    try:
-        return meal_types[int(value)]
-    except (ValueError, TypeError):
-        return "Unknown"
-
-@app.route('/delete_recipe', methods=['POST'])
-def delete_recipe():
-    if not session.get('admin'):
-        return redirect(url_for('home'))
-    
-    recipe_name = request.form.get("recipe_name").strip()
-    filename = recipe_name + ".html"
-    file_path = os.path.join(TEMPLATE_DIR, filename)
-    
-    if os.path.exists(file_path):
-        os.remove(file_path)
-        cursor.execute(f"DROP TABLE IF EXISTS `{recipe_name}`")
-        db.commit()
-        flash(" Recipe deleted successfully!", "success")
-    else:
-        flash("File does not exist!", "error")
-    threading.Thread(target=restart_server, daemon=True).start()
-    return redirect(url_for('form'))
-
-#edit panel
-@app.route('/editor/')
-def editor_home():
-    excluded_files = {"tes.html","login.html","category.html","filtered_recipes.html","liked.html",}
-    files = [f[:-5] for f in os.listdir(TEMPLATE_DIR) if f.endswith(".html") and f not in excluded_files]
-    return render_template('edit.html', files=files)
-
-def load_recipe(filename):
-    file_path = os.path.join(TEMPLATE_DIR, filename)
-    if not os.path.exists(file_path):
-        return None
-    with open(file_path, "r", encoding="utf-8") as file:
-        soup = BeautifulSoup(file, "html.parser")
-    return soup
-
-@app.route('/edit', methods=['POST'])
-def edit_recipe():
-    filename = request.form.get("filename") + ".html"
-    soup = load_recipe(filename)
-    if not soup:
-        flash("File not found!", "error")
-        return redirect(url_for("editor_home"))
-
-    # Helper function to extract list items as newline-separated string (removing the HTML tags)
-    def extract_list_text(section_id):
-        section = soup.find(id=section_id)
-        if not section:
-            return ""
-        items = []
-        for li in section.find_all('li'):
-            # Extract just the text content, ignoring the icon and span tags
-            span = li.find('span')
-            if span:
-                items.append(span.get_text(strip=True))
-            else:
-                items.append(li.get_text(strip=True))
-        return "\n".join(items)
-
-    data = {
-        "recipe_name": soup.title.string if soup.title else "",
-        "head": soup.find(id="head").get_text(strip=True) if soup.find(id="head") else "",
-        "image": soup.find(id="image")["src"] if soup.find(id="image") else "",
-        "description": soup.find(id="description").get_text(strip=True) if soup.find(id="description") else "",
-        "ingredients": extract_list_text("ingredients"),
-        "nutrition": extract_list_text("nutrition"),
-        "fun": soup.find(id="fun").get_text(strip=True) if soup.find(id="fun") else "",
-        "instructions": extract_list_text("instructions"),
-        "tips": soup.find(id="tips").get_text(strip=True) if soup.find(id="tips") else "",
-        "video": soup.find(id="video")["src"] if soup.find(id="video") else ""
-    }
-    return render_template('edit.html', files=[f[:-5] for f in os.listdir(TEMPLATE_DIR)], data=data, filename=filename[:-5])
-
-@app.route('/save', methods=['POST'])
-def save_recipe():
-    filename = request.form.get("filename") + ".html"
-    recipe_name = filename[:-5]  # Remove .html extension
-    soup = load_recipe(filename)
-    if not soup:
-        flash("File not found!", "error")
-        return redirect(url_for("editor_home"))
-
-    # Update HTML content (your working version)
-    updates = {
-        "head": request.form.get("head"),
-        "image": request.form.get("image"),
-        "description": request.form.get("description"),
-        "fun": request.form.get("fun"),
-        "tips": request.form.get("tips"),
-        "video": request.form.get("video")
-    }
-    
-    # Update simple text fields
-    for section, value in updates.items():
-        tag = soup.find(id=section)
-        if tag:
-            if section in ["image", "video"]:
-                tag["src"] = value
-            else:
-                tag.string = value
-    
-    # Update list sections with the new HTML structure
-    list_sections = {
-        "ingredients": request.form.get("ingredients", ""),
-        "nutrition": request.form.get("nutrition", ""),
-        "instructions": request.form.get("instructions", "")
-    }
-    
-    for section_id, text in list_sections.items():
-        tag = soup.find(id=section_id)
-        if tag:
-            tag.clear()
-            ul = soup.new_tag("ul")
-            for line in text.split('\n'):
-                if line.strip():
-                    li = soup.new_tag("li")
-                    
-                    # Add icon
-                    icon = soup.new_tag("i", attrs={"class": "bi bi-check-circle-fill"})
-                    li.append(icon)
-                    
-                    # Add space
-                    li.append(" ")
-                    
-                    # Add span with the text
-                    span = soup.new_tag("span")
-                    span.string = line.strip()
-                    li.append(span)
-                    
-                    ul.append(li)
-            tag.append(ul)
-
-    # Save the updated HTML file
-    with open(os.path.join(TEMPLATE_DIR, filename), "w", encoding="utf-8") as file:
-        file.write(str(soup))
-    
-    # Database update for only 3 columns (ingredient, nutrition, value)
-    try:
-        # Check if table exists
-        cursor.execute(f"SHOW TABLES LIKE '{recipe_name}'")
-        if not cursor.fetchone():
-            flash("Database table not found for this recipe!", "warning")
-        else:
-            # Get form data for database update
-            ingredients = request.form.get("ingredients", "").strip().split("\n")
-            nutrition_data = request.form.get("nutrition", "").strip().split("\n")
-            
-            # Get all existing rows
-            cursor.execute(f"SELECT * FROM `{recipe_name}`")
-            existing_rows = cursor.fetchall()
-            
-            # Update existing rows
-            for i, row in enumerate(existing_rows):
-                if i < len(ingredients) and ingredients[i].strip():
-                    # Get nutrition data if available
-                    nutrition_name, nutrition_value = "", ""
-                    if i < len(nutrition_data):
-                        parts = nutrition_data[i].strip().split(":")
-                        if len(parts) == 2:
-                            nutrition_name = parts[0].strip()
-                            nutrition_value = parts[1].strip()
-                    
-                    # Update only the three columns
-                    cursor.execute(f"""
-                        UPDATE `{recipe_name}` 
-                        SET ingredient = %s, nutrition = %s, value = %s
-                        WHERE ingredient = %s AND nutrition = %s AND value = %s
-                    """, (
-                        ingredients[i].strip(),
-                        nutrition_name,
-                        nutrition_value,
-                        row[0],  # current ingredient
-                        row[2],  # current nutrition
-                        row[3]   # current value
-                    ))
-            
-            # Add new rows if there are more ingredients than existing rows
-            for i in range(len(existing_rows), len(ingredients)):
-                if ingredients[i].strip():
-                    nutrition_name, nutrition_value = "", ""
-                    if i < len(nutrition_data):
-                        parts = nutrition_data[i].strip().split(":")
-                        if len(parts) == 2:
-                            nutrition_name = parts[0].strip()
-                            nutrition_value = parts[1].strip()
-                    
-                    # Insert new row with only the 3 columns (others will get default/null values)
-                    cursor.execute(f"""
-                        INSERT INTO `{recipe_name}` 
-                        (ingredient, nutrition, value)
-                        VALUES (%s, %s, %s)
-                    """, (
-                        ingredients[i].strip(),
-                        nutrition_name,
-                        nutrition_value
-                    ))
-            
-            db.commit()
-    except Exception as e:
-        db.rollback()
-        flash(f"Database update failed: {str(e)}", "error")
-    
-    flash("Recipe updated successfully!", "success")
-    threading.Thread(target=restart_server, daemon=True).start()
-    return redirect(url_for("editor_home"))
-
-#recipe categories
-def get_tables_by_category():
-    cursor.execute("SHOW TABLES")
-    tables = cursor.fetchall()
-    veg_tables = []
-    non_veg_tables = []
-    
-    for (table_name,) in tables:
-        try:
-            cursor.execute(f"SELECT COUNT(*) FROM `{table_name}` WHERE category = 'veg' AND meal_type NOT IN ('dessert', 'snacks')")
-            veg_count = cursor.fetchone()[0]
-            if veg_count > 0:
-                veg_tables.append(table_name)
-            
-            cursor.execute(f"SELECT COUNT(*) FROM `{table_name}` WHERE category = 'nonveg' AND meal_type NOT IN ('dessert', 'snacks')")
-            non_veg_count = cursor.fetchone()[0]
-            if non_veg_count > 0:
-                non_veg_tables.append(table_name)
-        except Exception as e:
-            print(f"Skipping table {table_name} due to error: {e}") 
-    
-    return veg_tables, non_veg_tables
-
-def format_veg_data(table_names):
-    recipes = []
-    for table_name in table_names:
-        url_name = table_name[0].upper() + table_name[1:] if table_name else table_name
-        
-        recipes.append({
-            'name': table_name.replace('_', ' ').title(),
-            'url': url_for('show_page', page=url_name),
-            'image': get_recipe_image_url(table_name),
-            'default_image': url_for('static', filename='images/default.jpg')
-        })
-    return recipes
-
-def format_non_veg_data(table_names):
-    recipes = []
-    for table_name in table_names:
-        url_name = table_name[0].upper() + table_name[1:] if table_name else table_name
-        
-        recipes.append({
-            'name': table_name.replace('_', ' ').title(),
-            'url': url_for('show_page', page=url_name),
-            'image': get_recipe_image_url(table_name),
-            'default_image': url_for('static', filename='images/default.jpg')
-        })
-    return recipes
-
-@app.route("/category")
-def category():
-    return render_template("category.html")
-
-@app.route("/veg")
-def veg():
-    veg_tables, _ = get_tables_by_category()
-    recipes = format_veg_data(veg_tables)
-    return render_template("veg.html", veg_recipes=recipes)
-
-@app.route("/non_veg")
-def non_veg():
-    _, non_veg_tables = get_tables_by_category()
-    recipes = format_non_veg_data(non_veg_tables)
-    return render_template("non_veg.html", non_veg_recipes=recipes)
-
-def get_dessert_tables():
-    cursor.execute("SHOW TABLES")
-    tables = cursor.fetchall()
-    dessert_tables = []
-    
-    for (table_name,) in tables:
-        try:
-            cursor.execute(f"SELECT COUNT(*) FROM `{table_name}` WHERE meal_type IN ('dessert')")
-            dessert_count = cursor.fetchone()[0]
-            if dessert_count > 0:
-                dessert_tables.append(table_name)
-        except Exception as e:
-            print(f"Skipping table {table_name} due to error: {e}")
-    
-    return dessert_tables
-
-def format_dessert_data(table_names):
-    recipes = []
-    for table_name in table_names:
-        # Ensure first letter is capitalized for URL
-        url_name = table_name[0].upper() + table_name[1:] if table_name else table_name
-        
-        recipes.append({
-            'name': table_name.replace('_', ' ').title(),  # Display name
-            'url': url_for('show_page', page=url_name),    # URL with capitalized first letter
-            'image': get_recipe_image_url(table_name),
-            'default_image': url_for('static', filename='images/default.jpg')
-        })
-    return recipes
-
-@app.route("/dessert")
-def dessert():
-    dessert_tables = get_dessert_tables()
-    recipes = format_dessert_data(dessert_tables)
-    return render_template("desserts.html", dessert_recipes=recipes)
-
-def get_breakfast_tables():
-    cursor.execute("SHOW TABLES")
-    tables = cursor.fetchall()
-    breakfast_tables = []
-    
-    for (table_name,) in tables:
-        try:
-            cursor.execute(f"SELECT COUNT(*) FROM `{table_name}` WHERE meal_type = 'breakfast'")
-            breakfast_count = cursor.fetchone()[0]
-            if breakfast_count > 0:
-                breakfast_tables.append(table_name)
-        except Exception as e:
-            print(f"Skipping table {table_name} due to error: {e}")
-    return breakfast_tables
-
-def format_breakfast_data(table_names):
-    recipes = []
-    for table_name in table_names:
-        url_name = table_name[0].upper() + table_name[1:] if table_name else table_name
-        
-        recipes.append({
-            'name': table_name.replace('_', ' ').title(),
-            'url': url_for('show_page', page=url_name),
-            'image': get_recipe_image_url(table_name),
-            'default_image': url_for('static', filename='images/default.jpg')
-        })
-    return recipes
-
-@app.route("/breakfast")
-def breakfast():
-    breakfast_tables = get_breakfast_tables()
-    recipes = format_breakfast_data(breakfast_tables)
-    return render_template("breakfast.html", breakfast_recipes=recipes)
-
-def get_lunch_tables():
-    cursor.execute("SHOW TABLES")
-    tables = cursor.fetchall()
-    lunch_tables = []
-    
-    for (table_name,) in tables:
-        try:
-            cursor.execute(f"SELECT COUNT(*) FROM `{table_name}` WHERE meal_type = 'lunch'")
-            lunch_count = cursor.fetchone()[0]
-            if lunch_count > 0:
-                lunch_tables.append(table_name)
-        except Exception as e:
-            print(f"Skipping table {table_name} due to error: {e}")
-    
-    return lunch_tables
-
-def format_lunch_data(table_names):
-    recipes = []
-    for table_name in table_names:
-        url_name = table_name[0].upper() + table_name[1:] if table_name else table_name
-        
-        recipes.append({
-            'name': table_name.replace('_', ' ').title(),
-            'url': url_for('show_page', page=url_name),
-            'image': get_recipe_image_url(table_name),
-            'default_image': url_for('static', filename='images/default.jpg')
-        })
-    return recipes
-@app.route("/lunch")
-def lunch():
-    lunch_tables = get_lunch_tables()
-    recipes = format_lunch_data(lunch_tables)
-    return render_template("lunch.html", lunch_recipes=recipes)
-
-
-
-def get_dinner_tables():
-    cursor.execute("SHOW TABLES")
-    tables = cursor.fetchall()
-    dinner_tables = []
-    
-    for (table_name,) in tables:
-        try:
-            cursor.execute(f"SELECT COUNT(*) FROM `{table_name}` WHERE meal_type = 'dinner'")
-            dinner_count = cursor.fetchone()[0]
-            if dinner_count > 0:
-                dinner_tables.append(table_name)
-        except Exception as e:
-            print(f"Skipping table {table_name} due to error: {e}")
-    
-    return dinner_tables
-
-def format_dinner_data(table_names):
-    recipes = []
-    for table_name in table_names:
-        url_name = table_name[0].upper() + table_name[1:] if table_name else table_name
-        
-        recipes.append({
-            'name': table_name.replace('_', ' ').title(),
-            'url': url_for('show_page', page=url_name),
-            'image': get_recipe_image_url(table_name),
-            'default_image': url_for('static', filename='images/default.jpg')
-        })
-    return recipes
-
-@app.route("/dinner")
-def dinner():
-    dinner_tables = get_dinner_tables()
-    recipes = format_dinner_data(dinner_tables)
-    return render_template("dinner.html", dinner_recipes=recipes)
-
-def get_drinks_tables():
-    cursor.execute("SHOW TABLES")
-    tables = cursor.fetchall()
-    drinks_tables = []
-    
-    for (table_name,) in tables:
-        try:
-            cursor.execute(f"SELECT COUNT(*) FROM `{table_name}` WHERE meal_type = 'drinks'")
-            drinks_count = cursor.fetchone()[0]
-            if drinks_count > 0:
-                drinks_tables.append(table_name)
-        except Exception as e:
-            print(f"Skipping table {table_name} due to error: {e}")
-    
-    return drinks_tables
-
-def format_drinks_data(table_names):
-    recipes = []
-    for table_name in table_names:
-        # Ensure first letter is capitalized for URL
-        url_name = table_name[0].upper() + table_name[1:] if table_name else table_name
-        
-        recipes.append({
-            'name': table_name.replace('_', ' ').title(),  # Display name
-            'url': url_for('show_page', page=url_name),    # URL with capitalized first letter
-            'image': get_recipe_image_url(table_name),
-            'default_image': url_for('static', filename='images/default.jpg')
-        })
-    return recipes
-
-@app.route("/drinks")
-def drinks():
-    drinks_tables = get_drinks_tables()
-    recipes = format_drinks_data(drinks_tables)
-    return render_template("drinks.html", drinks_recipes=recipes)
-#nutrition filtering
-
-NUTRITION_ALIASES = {
-    "calories": ["calories", "kcal"],
-    "protein": ["protein", "prot"],
-    "carbs": ["carbs", "carbohydrates"],
-    "fats": ["fats", "fat"],
-    "sugar": ["sugar", "sugars"],
-    "fiber": ["fiber", "fibr", "fibres"],
-    "cholesterol": ["cholesterol", "cholestrol"]
-}
-
-UNIT_CONVERSIONS = {
-    "carbs": "kcal",
-    "cholesterol": "mg",
-    "calories": "kcal",
-    "protein": "g",
-    "fats": "g",
-    "sugar": "g",
-    "fiber": "g"
-}
-
-def parse_nutrition_value(value):
-    """Extract numeric value or range from nutrition string."""
-    numbers = re.findall(r"\d+", value)
-    return int(numbers[0]) if numbers else None
-
-def format_filtered_data(table_names):
-    """Format recipe data with consistent structure"""
-    recipes = []
-    for table_name in table_names:
-        url_name = table_name[0].upper() + table_name[1:] if table_name else table_name
-        
-        recipes.append({
-            'name': table_name.replace('_', ' ').title(),
-            'url': url_for('show_page', page=url_name),
-            'image': get_recipe_image_url(table_name),
-            'default_image': url_for('static', filename='images/default.jpg')
-        })
-    return recipes
-
-def get_filtered_recipes(filters):
-    """Filter recipes based on user-selected filters with ±10 range tolerance."""
-    cursor.execute("SHOW TABLES")
-    tables = cursor.fetchall()
-    matching_recipes = []
-
-    # Remove filters with value 0 (ignore them)
-    active_filters = {k: v for k, v in filters.items() if v != 0}
-    
-    for (table_name,) in tables:
-        try:
-            cursor.execute(f"SELECT nutrition, value FROM `{table_name}`")
-            nutrition_data = cursor.fetchall()
-            
-            recipe_values = {}
-
-            # Map database nutrition names to standardized keys
-            for nutrition, value in nutrition_data:
-                for key, aliases in NUTRITION_ALIASES.items():
-                    if nutrition.lower() in aliases:
-                        recipe_values[key] = parse_nutrition_value(value)
+        # Only include recipes where ALL selected ingredients are found
+        if all_selected_matched:
+            # Calculate missing (items in the recipe that user didn't select)
+            missing_ingredients = []
+            for db_ing in db_ingredients:
+                was_selected = False
+                for user_ing in selected_ingredients:
+                    if user_ing in db_ing:
+                        was_selected = True
                         break
+                if not was_selected:
+                    missing_ingredients.append(db_ing)
 
-            # Validate against active filters with ±10 range
-            valid = True
-            for key, user_value in active_filters.items():
-                recipe_value = recipe_values.get(key)
-                if recipe_value is None:
-                    # Recipe doesn't have this nutrition info - exclude it
-                    valid = False
-                    break
-                if not (user_value - 20 <= recipe_value <= user_value + 20):
-                    valid = False
-                    break
+            # Process Image
+            img_url = row['image_url']
+            if img_url and not img_url.startswith('http'):
+                 img_url = url_for('static', filename=f'images/{img_url}')
+            else:
+                target_title = title.lower().strip()
+                found_image = None
+                if os.path.exists(image_dir):
+                    for filename in os.listdir(image_dir):
+                        if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                            if os.path.splitext(filename)[0].lower().strip() == target_title:
+                                found_image = filename
+                                break
+                if found_image: img_url = url_for('static', filename=f'images/{found_image}')
 
-            # Only include if matches ALL active filters (or if no active filters)
-            if valid:
-                matching_recipes.append(table_name)
+            results.append({
+                'display_name': title,
+                'html_page': row['slug'],
+                'image': img_url,
+                'missing_count': len(missing_ingredients),
+                'missing_items': missing_ingredients
+            })
 
-        except Exception as e:
-            print(f"Skipping table {table_name} due to error: {e}")
-            continue
+    conn.close()
 
-    return matching_recipes
+    # Sort results by the amount of additional ingredients required (least first)
+    results.sort(key=lambda x: x['missing_count'])
+
+    if not results:
+        return jsonify({'success': False, 'message': 'No recipes found containing ALL selected ingredients.'})
+
+    return jsonify({
+        'success': True,
+        'recipes': results
+    })
 
 @app.route("/filter_recipes", methods=["POST"])
 def filter_recipes():
-    """Handle recipe filtering with range tolerance and zero-value ignoring."""
-    try:
-        # Get JSON data from the request
-        if request.is_json:
-            filters = request.get_json()
-        else:
-            filters = request.form.to_dict()
+    if request.is_json: filters = request.get_json()
+    else: filters = request.form.to_dict()
+    NUTRITION_KEYS = ["calories", "protein", "carbs", "fats", "sugar", "fiber", "cholesterol"]
+    user_filters = {k: int(v) for k, v in filters.items() if k in NUTRITION_KEYS and v and int(v) > 0}
+    if not user_filters: return jsonify({'success': True, 'filtered_recipes': [], 'message': "No filters selected"})
+    conn = get_db()
+    cursor = conn.execute("SELECT r.title, r.slug, r.image_url, n.name, n.value_int FROM recipes r JOIN nutrition n ON r.id = n.recipe_id")
+    rows = cursor.fetchall()
+    conn.close()
+    recipe_data = {}
+    image_dir = os.path.join(STATIC_DIR, 'images')
+    for row in rows:
+        slug = row['slug']
+        if slug not in recipe_data: 
+            img_url = row['image_url']
+            if img_url and not img_url.startswith('http'):
+                 img_url = url_for('static', filename=f'images/{img_url}')
+            else:
+                target_title = row['title'].lower().strip()
+                found_image = None
+                if os.path.exists(image_dir):
+                    for filename in os.listdir(image_dir):
+                        if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                            if os.path.splitext(filename)[0].lower().strip() == target_title:
+                                found_image = filename
+                                break
+                if found_image: img_url = url_for('static', filename=f'images/{found_image}')
+            recipe_data[slug] = {'name': row['title'], 'url': url_for('show_page', slug=slug), 'image': img_url, 'nutrition': {}}
         
-        print("Received filters:", filters)
+        nut_name = row['name'].lower()
+        for key in NUTRITION_KEYS:
+            if key in nut_name: recipe_data[slug]['nutrition'][key] = row['value_int']
+    matching_recipes = []
+    for slug, data in recipe_data.items():
+        match = True
+        r_nuts = data['nutrition']
+        for key, target_val in user_filters.items():
+            current_val = r_nuts.get(key, 0)
+            if not (target_val - 25 <= current_val <= target_val + 25):
+                match = False;
+                break
+        if match: matching_recipes.append({'name': data['name'], 'url': data['url'], 'image': data['image']})
+    return jsonify({'success': True, 'filtered_recipes': matching_recipes})
 
-        # Convert string values to integers and filter out None/0 values
-        user_filters = {}
-        for nutrient in ["calories", "protein", "carbs", "fats", "sugar", "fiber", "cholesterol"]:
-            value = filters.get(nutrient)
-            if value:
-                try:
-                    num_value = int(value)
-                    # Include all values (including 0, which will be ignored later)
-                    # Apply carbs multiplier if needed (remove if not necessary)
-                    user_filters[nutrient] = num_value * 4 if nutrient == "carbs" else num_value
-                except (ValueError, TypeError):
-                    continue
-
-        print("Processed filters:", user_filters)
-
-        filtered_tables = get_filtered_recipes(user_filters) if user_filters else []
-        filtered_recipes = format_filtered_data(filtered_tables)
-
-        print(f"Found {len(filtered_recipes)} matching recipes")
-        return jsonify({
-            'success': True,
-            'filtered_recipes': filtered_recipes,
-            'filters': user_filters,
-            'message': f"Found {len(filtered_recipes)} matching recipes"
-        })
-
-    except Exception as e:
-        print(f"Error in filter_recipes: {str(e)}")
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': "Failed to apply filters"
-        }), 500
-    
-#like system
 @app.route('/like_recipe', methods=['POST'])
 def like_recipe():
-    if 'username' not in session:
-        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
-
+    if 'username' not in session: return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
     data = request.get_json()
-    recipe_name = data.get('recipe_name')
+    slug = data.get('recipe_name')
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM recipes WHERE slug = ?", (slug,))
+    recipe = cur.fetchone()
+    if not recipe: conn.close(); return jsonify({'status': 'error', 'message': 'Recipe not found'}), 404
+    recipe_id = recipe['id']
     username = session['username']
-
     try:
-        with mysql.connection.cursor() as cur:
-            cur.execute(
-                "SELECT * FROM liked_recipes WHERE recipe = %s AND username = %s",
-                (recipe_name, username)
-            )
-            liked = cur.fetchone()
+        cur.execute("INSERT INTO likes (recipe_id, username) VALUES (?, ?)", (recipe_id, username))
+        liked = True
+    except sqlite3.IntegrityError:
+        cur.execute("DELETE FROM likes WHERE recipe_id = ? AND username = ?", (recipe_id, username))
+        liked = False
+    conn.commit()
+    conn.close()
+    return jsonify({'status': 'success', 'liked': liked})
 
-            if liked:
-                cur.execute(
-                    "DELETE FROM liked_recipes WHERE recipe = %s AND username = %s",
-                    (recipe_name, username)
-                )
-                mysql.connection.commit()
-                return jsonify({'status': 'success', 'message': 'Recipe disliked', 'liked': False})
-            else:
-                cur.execute(
-                    "INSERT INTO liked_recipes (recipe, username) VALUES (%s, %s)",
-                    (recipe_name, username)
-                )
-                mysql.connection.commit()
-                return jsonify({'status': 'success', 'message': 'Recipe liked', 'liked': True})
-    except Exception as e:
-        mysql.connection.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-    
 @app.route('/liked')
 def liked_recipes():
-    if 'username' not in session:
-        flash('Please log in to view your liked recipes', 'error')
-        return redirect(url_for('home'))
+    if 'username' not in session: return redirect(url_for('home'))
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""SELECT r.title, r.slug, r.image_url FROM recipes r JOIN likes l ON r.id = l.recipe_id WHERE l.username = ?""", (session['username'],))
+    rows = cur.fetchall()
+    conn.close()
+    liked = []
+    image_dir = os.path.join(STATIC_DIR, 'images')
+    for row in rows:
+        img_url = row['image_url']
+        if img_url and not img_url.startswith('http'):
+             img_url = url_for('static', filename=f'images/{img_url}')
+        else:
+            target_title = row['title'].lower().strip()
+            found_image = None
+            if os.path.exists(image_dir):
+                for filename in os.listdir(image_dir):
+                    if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                        if os.path.splitext(filename)[0].lower().strip() == target_title:
+                            found_image = filename
+                            break
+            if found_image: img_url = url_for('static', filename=f'images/{found_image}')
+        liked.append({'name': row['title'], 'url': url_for('show_page', slug=row['slug']), 'image': img_url})
+    return render_template('liked.html', liked_recipes=liked)
 
-    username = session['username']
-
-    try:
-        with mysql.connection.cursor() as cur:
-            cur.execute(
-                "SELECT recipe FROM liked_recipes WHERE username = %s",
-                (username,))
-            liked_recipes = []
-            for row in cur.fetchall():
-                recipe_name = row[0]
-                liked_recipes.append({
-                    'name': recipe_name,
-                    'url': url_for('show_page', page=recipe_name),
-                    'image': get_recipe_image_url(recipe_name),
-                    'default_image': url_for('static', filename='images/default.jpg')
-                })
-
-        return render_template('liked.html', liked_recipes=liked_recipes)
-        
-    except Exception as e:
-        flash('An error occurred while loading your liked recipes', 'error')
-        app.logger.error(f"Error in liked_recipes: {str(e)}")
-        return redirect(url_for('main'))
-
-def restart_server():
-    """Restart the Flask application in a background thread"""
-    time.sleep(2) 
-    os.execv(sys.executable, ['python'] + sys.argv)
+@app.route('/get_related_recipes/<slug>')
+def fetch_related_recipes(slug):
+    conn = get_db()
+    current = conn.execute("SELECT meal_type FROM recipes WHERE slug=?", (slug,)).fetchone()
+    if current: related = conn.execute("SELECT title, slug, image_url FROM recipes WHERE meal_type=? AND slug!=? LIMIT 4", (current['meal_type'], slug)).fetchall()
+    else: related = conn.execute("SELECT title, slug, image_url FROM recipes WHERE slug!=? ORDER BY RANDOM() LIMIT 4", (slug,)).fetchall()
+    conn.close()
+    return jsonify([{"name": r['title'], "url": url_for('show_page', slug=r['slug']), "image_url": r['image_url']} for r in related])
 
 if __name__ == '__main__':
-    # host='0.0.0.0' makes it accessible to other devices
     app.run(host='0.0.0.0', port=5000, debug=True)

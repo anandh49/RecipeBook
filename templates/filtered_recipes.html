@@ -1,781 +1,403 @@
 <!DOCTYPE html>
-<title id="title">Liked</title>
 <html lang="en">
-
 <head>
-  <style>
-/* Base Styles */
-body {
-  width: 100%;
-  min-height: 100vh;
-  background-color: #fbfbfb;
-  font-family: 'Roboto', sans-serif;
-  margin: 0;
-  padding: 0;
-}
-
-/* Header Styles */
-.header {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.sitename {
-  font-family: 'Amatic SC', cursive;
-  font-weight: 700;
-  font-size: 1.8rem;
-}
-
-.navmenu ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  gap: 20px;
-}
-
-.navmenu a {
-  text-decoration: none;
-  color: #333;
-  font-weight: 500;
-}
-
-/* Recipe Grid Styles */
-.recipe-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 20px;
-  width: 90%;
-  margin: 30px auto;
-  padding: 20px;
-}
-
-.block-container {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1/1;
-  transition: all 0.3s ease;
-  perspective: 500px;
-}
-
-.btn-back {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  border-radius: 16px;
-  transition: all 0.3s ease;
-  transform-style: preserve-3d;
-  transform-origin: bottom right;
-  transform: rotateZ(15deg);
-  will-change: transform;
-  box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(135deg, #4682eb -20%, #01beff 120%);
-}
-
-.btn-front {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-  border-radius: 16px;
-  background-color: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
-  transform-style: preserve-3d;
-  transform-origin: top left;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 15px;
-  box-sizing: border-box;
-}
-
-.recipe-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-decoration: none;
-  color: black;
-  font-weight: bold;
-  width: 100%;
-  height: 100%;
-}
-
-.recipe-image {
-  width: 100%;
-  height: 70%;
-  object-fit: cover;
-  border-radius: 12px;
-  margin-bottom: 10px;
-}
-
-.recipe-name {
-  margin-top: auto;
-  font-family: 'Roboto', sans-serif;
-  text-align: center;
-  font-size: 0.9rem;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-}
-
-/* Hover Effects */
-.block-container:hover {
-  transform: translateY(-5px);
-}
-
-.block-container:hover .btn-back {
-  transform: translateZ(20px) rotateZ(15deg) rotateX(-10deg) rotateY(-10deg);
-  box-shadow: 12px 12px 30px rgba(0, 0, 0, 0.15);
-}
-
-.block-container:hover .btn-front {
-  transform: translateZ(40px) translateY(-5px) rotateX(5deg) rotateY(5deg);
-}
-
-/* Filter Styles - RESTORED */
-.filter-toggle-btn {
-  position: relative;
- top: -310px;
-  left: 120px;
-  background-color: #4682eb;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 25px;
-  cursor: pointer;
-  z-index: 999;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.filter-toggle-btn:hover {
-  background-color: #3a6fc8;
-  transform: translateY(-2px);
-}
-
-.filter-card {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 550px;
-  max-width: 90%;
-  min-height: 300px;
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-  backdrop-filter: blur(18px);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  z-index: 1000;
-  display: none;
-}
-
-.filter-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.filter-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.filter-item label {
-  flex: 1;
-  text-align: left;
-  font-weight: bold;
-  color: #333;
-}
-
-.slider-container {
-  flex: 2;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.filter-item input[type="range"] {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 8px;
-  border-radius: 4px;
-  background: #e0e0e0;
-  outline: none;
-}
-
-.filter-item input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #4682eb;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.filter-item input[type="range"]::-webkit-slider-thumb:hover {
-  background: #3a6fc8;
-  transform: scale(1.1);
-}
-
-.filter-btn {
-  background-color: #fa709a;
-  color: white;
-  padding: 0.8rem 1.8rem;
-  border-radius: 2rem;
-  cursor: pointer;
-  font-size: 1rem;
-  margin-top: 20px;
-  border: none;
-  transition: all 0.3s ease;
-  align-self: center;
-}
-
-.filter-btn:hover {
-  background-color: #e55a84;
-  transform: translateY(-2px);
-}
-
-.close-filter-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #666;
-  transition: all 0.2s ease;
-}
-
-.close-filter-btn:hover {
-  color: #333;
-  transform: rotate(90deg);
-}
-
-/* Overlay */
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-  display: none;
-}
-
-/* Pagination */
-.pagination {
-  text-align: center;
-  margin: 30px 0;
-}
-
-.pagination button {
-  padding: 10px 20px;
-  margin: 0 10px;
-  border: none;
-  background-color: #000000;
-  color: white;
-  cursor: pointer;
-  border-radius: 25px;
-  font-size: 14px;
-  transition: all 0.3s ease;
-}
-
-.pagination button:hover {
-  background-color: #333;
-}
-
-.pagination button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-/* Search Styles */
-.search-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: all 0.3s ease;
-  opacity: 0;
-  width: 0;
-  overflow: hidden;
-}
-
-.search-container.active {
-  opacity: 1;
-  width: 300px;
-}
-
-#searchForm {
-  display: flex;
-  align-items: center;
-  background-color: white;
-  border-radius: 25px;
-  border: 2px solid #000000;
-  overflow: hidden;
-  box-shadow: 0px 2px 5px rgba(183, 0, 0, 0.2);
-  flex: 1;
-}
-
-#searchInput {
-  flex: 1;
-  padding: 10px 20px;
-  border: none;
-  outline: none;
-  font-size: 16px;
-}
-
-#searchForm button {
-  background: linear-gradient(to right, #000000, #000000);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-/* Utility Styles */
-.no-results {
-  text-align: center;
-  padding: 40px;
-  font-size: 1.2rem;
-  color: #666;
-  width: 100%;
-  grid-column: 1 / -1;
-}
-
-.spinner-border {
-  display: inline-block;
-  width: 1rem;
-  height: 1rem;
-  vertical-align: text-bottom;
-  border: 0.2em solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spinner-border .75s linear infinite;
-}
-
-@keyframes spinner-border {
-  to { transform: rotate(360deg); }
-}
-
-/* Responsive Adjustments */
-@media (max-width: 1024px) {
-  .recipe-container {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .recipe-container {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 15px;
-  }
-  
-  .navmenu ul {
-    gap: 15px;
-  }
-}
-
-@media (max-width: 480px) {
-  .recipe-container {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
-  }
-  
-  .recipe-name {
-    font-size: 0.8rem;
-  }
-  
-  .filter-card {
-    width: 90%;
-    padding: 1rem;
-  }
-  
-  .filter-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  
-  .slider-container {
-    width: 100%;
-  }
-  
-  .filter-toggle-btn {
-    padding: 8px 16px;
-    font-size: 0.9rem;
-  }
-}
-  </style>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <meta name="description" content="">
-  <meta name="keywords" content="">
+  <title>Nutrition Filter</title>
 
-  <!-- Favicons -->
-  <link href="static/assets/img/favicon.png" rel="icon">
-  <link href="static/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
-
-  <!-- Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Amatic+SC:wght@400;700&display=swap" rel="stylesheet">
 
-  <!-- Vendor CSS Files -->
-  <link href="static/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <link href="static/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="static/assets/vendor/aos/aos.css" rel="stylesheet">
-  <link href="static/assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
-  <link href="static/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
-
-  <!-- Font Awesome for search icon -->
+  <link href="{{ url_for('static', filename='assets/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/aos/aos.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/glightbox/css/glightbox.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/swiper/swiper-bundle.min.css') }}" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="{{ url_for('static', filename='assets/css/main.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
 
-  <!-- Main CSS File -->
-  <link href="static/assets/css/main.css" rel="stylesheet">
+  <style>
+    /* =========================================
+       HEADER & DROPDOWN STYLES
+       ========================================= */
+    .header .container { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; padding-bottom: 10px; position: relative; }
+    
+    .brand-group { display: flex; flex-direction: row; align-items: center; gap: 15px; z-index: 20; flex-shrink: 0; }
+    .logo { text-decoration: none; display: flex; align-items: baseline; }
+    .logo h1 { margin: 0; font-family: 'Amatic SC', sans-serif; font-size: 2.5rem; color: #37373f; line-height: 1; white-space: nowrap; }
+    .logo span { color: #ce1212; font-size: 2.5rem; font-family: 'Amatic SC', sans-serif; padding-left: 2px; }
+    
+    #navmenu { margin-left: auto; margin-right: 20px; }
+    .header-right-group { display: flex; align-items: center; gap: 10px; position: relative; }
+
+    /* SEARCH BAR */
+    #searchForm { display: flex; align-items: center; border-radius: 50px; background: transparent; border: 2px solid transparent; transition: all 0.3s ease; overflow: hidden; position: relative; }
+    #searchForm.expanded { background-color: white; border: 2px solid #ce1212; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    #searchInput { width: 0; padding: 0; border: none; outline: none; background: transparent; transition: width 0.4s ease, padding 0.4s ease; font-size: 16px; opacity: 0; }
+    #searchForm.expanded #searchInput { width: 200px; padding: 5px 15px; opacity: 1; }
+    #searchBtn { background: transparent !important; color: #000; border: none; padding: 8px 12px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+
+    .icon-trigger { color: #000; font-size: 22px; cursor: pointer; transition: color 0.3s; text-decoration: none; margin-left: 10px; }
+
+    /* CUSTOM MOBILE DROPDOWN */
+    .mobile-dropdown-menu { display: none; position: absolute; top: 60px; right: 15px; width: 200px; background-color: white; box-shadow: 0 8px 16px rgba(0,0,0,0.2); border-radius: 8px; z-index: 99999; overflow: hidden; border: 1px solid #eee; }
+    .mobile-dropdown-menu.active { display: block; animation: fadeIn 0.3s ease; }
+    .mobile-dropdown-menu a { display: block; padding: 12px 20px; color: #333; text-decoration: none; font-weight: 500; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; }
+    .mobile-dropdown-menu a:last-child { border-bottom: none; }
+    .mobile-dropdown-menu a:hover { background-color: #f8f9fa; color: #ce1212; }
+    .mobile-dropdown-menu a.home-link { font-weight: bold; color: #ce1212; }
+
+    .custom-toggle-btn { color: #000; font-size: 32px; cursor: pointer; z-index: 10000; margin-left: 5px; display: none; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 1200px) { 
+        .header-right-group { margin-left: auto; gap: 15px; padding-right: 0; }
+        .logo h1, .logo span { font-size: 2rem; } 
+        #searchForm { position: absolute; right: 45px; top: 50%; transform: translateY(-50%); z-index: 40; background: transparent; border: none; }
+        #searchForm.expanded { background-color: white; border: 2px solid #ce1212; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        #searchForm.expanded #searchInput { width: 120px; padding: 5px 10px; opacity: 1; }
+        .custom-toggle-btn { display: block; }
+        #navmenu { display: none; }
+    }
+
+    /* =========================================
+       PAGE SPECIFIC STYLES
+       ========================================= */
+    /* Hero */
+    .hero.section { position: relative; padding-bottom: 20px; text-align: center; }
+
+    /* Recipe Grid (Standardized) */
+    .recipe-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px 0; margin-bottom: 60px; }
+    .block-container { position: relative; width: 150px; height: 150px; perspective: 1000px; cursor: pointer; margin: 10px; }
+    .btn-back { position: absolute; inset: 0; z-index: -1; border-radius: 20px; transform: rotate(5deg); transition: 0.3s; box-shadow: 5px 5px 15px rgba(0,0,0,0.15); width: 100%; height: 100%; background: linear-gradient(135deg, #4682eb -20%, #01beff 120%); }
+    .btn-front { position: absolute; inset: 0; z-index: 1; border-radius: 20px; background: white; border: 1px solid #eee; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; overflow: hidden; padding: 0; width: 100%; height: 100%; }
+    .block-container:hover .btn-front { transform: translateY(-5px); }
+    .block-container:hover .btn-back { transform: rotate(8deg) scale(1.02); }
+    .recipe-image { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; }
+    
+    /* FIX: WRAP TEXT LOGIC */
+    .recipe-name { 
+        position: absolute; 
+        bottom: 0; 
+        width: 100%; 
+        background: rgba(255,255,255,0.95); 
+        text-align: center; 
+        font-family: 'Amatic SC', sans-serif; 
+        font-weight: bold; 
+        color: #333; 
+        
+        font-size: 1.1rem;       
+        padding: 3px 5px;        
+        line-height: 1.1;        
+        max-height: 50px;
+        
+        /* Multi-line wrapping */
+        white-space: normal;     
+        display: -webkit-box;
+        -webkit-line-clamp: 2;   
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .recipe-button { width: 100%; height: 100%; display: block; }
+
+    /* === FILTER BUTTON ADJUSTED === */
+    .filter-toggle-btn {
+        position: fixed; 
+        bottom: 90px; 
+        right: 30px; 
+        background: linear-gradient(135deg, #4682eb -20%, #01beff 120%); 
+        color: white; 
+        border: none; 
+        padding: 12px 25px; 
+        border-radius: 50px; 
+        cursor: pointer; 
+        z-index: 990; 
+        box-shadow: 0 4px 15px rgba(70, 130, 235, 0.4); 
+        font-weight: 600; 
+        transition: all 0.3s ease;
+    }
+    .filter-toggle-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(70, 130, 235, 0.6); }
+
+    .filter-card {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 90%; max-width: 500px; background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37); backdrop-filter: blur(10px);
+        border-radius: 1rem; padding: 1.5rem; z-index: 1000; display: none;
+        max-height: 85vh; overflow-y: auto; 
+    }
+    .filter-container { display: flex; flex-direction: column; gap: 15px; }
+    .filter-item { display: flex; align-items: center; justify-content: space-between; }
+    .slider-container { flex: 2; display: flex; align-items: center; gap: 10px; }
+    input[type="range"] { width: 100%; accent-color: #4682eb; }
+    .close-filter-btn { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; background: none; border: none; cursor: pointer; color: #666; }
+    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; display: none; }
+    .filter-btn { background-color: #fa709a; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; align-self: center; margin-top: 10px; }
+
+    /* Pagination */
+    .pagination { display: flex; justify-content: center; gap: 15px; margin-bottom: 80px; }
+    .pagination button { padding: 8px 20px; background: #4682eb; color: white; border: none; border-radius: 20px; cursor: pointer; }
+    .pagination button:disabled { background: #ccc; }
+
+    /* Empty State */
+    .no-results { width: 100%; text-align: center; padding: 40px; color: #777; font-size: 1.2rem; }
+
+  </style>
 </head>
 
 <body class="index-page">
 
   <header id="header" class="header d-flex align-items-center sticky-top">
-    <div class="container position-relative d-flex align-items-center justify-content-between">
-      <a href="index.html" class="logo d-flex align-items-center me-auto me-xl-0">
-        <h1 class="sitename">The Recipe Book</h1>
-        <span>.</span>
-      </a>
-      <nav id="navmenu" class="navmenu">
+    <div class="container">
+      
+      <div class="brand-group">
+          <a href="{{ url_for('main') }}" class="logo">
+            <h1 class="sitename">RecipeBook</h1>
+            <span>.</span>
+          </a>
+      </div>
+
+      <nav id="navmenu" class="navmenu ms-auto d-none d-xl-block">
         <ul>
-          <li> <a href="{{ url_for('show_page', page='category') }}">veg/nonveg</a></li>
-          <li><a href="{{ url_for('show_page', page='ingredients') }}">Ingredients</a></li>
-          <li><a href="{{ url_for('show_page', page='liked') }}">Liked</a></li>
+          <li><a href="{{ url_for('main') }}">Home</a></li>
+          <li><a href="{{ url_for('show_page', slug='ingredients') }}">Ingredients</a></li>
+          <li><a href="{{ url_for('show_page', slug='category') }}">Veg/NonVeg</a></li>
+          <li><a href="{{ url_for('liked_recipes') }}">Liked</a></li>
         </ul>
-        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
       </nav>
   
-      <!-- Search Container -->
-      <div class="search-container" id="searchContainer">
-        <div class="search">
+      <div class="header-right-group">
           <form id="searchForm">
-            <input type="text" id="searchInput" name="search" placeholder="Search recipes..." required>
-            <button type="submit">
-              <div class="search-icon">
-                <i class="fa-solid fa-magnifying-glass" style="color:white;"></i>
-              </div>
-            </button>
+              <input type="text" id="searchInput" name="search" placeholder="Search...">
+              <button type="submit" id="searchBtn">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+              </button>
           </form>
-        </div>
+          
+          <a href="{{ url_for('main') }}" class="icon-trigger d-none d-xl-flex" title="Return to Home">
+            <i class="fa-solid fa-arrow-left"></i>
+          </a>
+
+          <i id="customMobileToggle" class="custom-toggle-btn bi bi-list"></i>
       </div>
-  
-      <!-- Search Button -->
-      <a class="btn-getstarted" id="searchButton">Search</a>
-      <li> <a href="{{ url_for('show_page', page='main') }}" class="active"><img src="{{ url_for('static', filename='images/home.png') }}"></a></li>
+
+      <div id="customMobileDropdown" class="mobile-dropdown-menu">
+          <a href="{{ url_for('show_page', slug='ingredients') }}">Ingredients</a>
+          <a href="{{ url_for('show_page', slug='category') }}">Veg/NonVeg</a>
+          <a href="{{ url_for('liked_recipes') }}">Liked Recipes</a>
+          <div style="border-top: 1px solid #ddd; margin: 5px 0;"></div>
+          <a href="{{ url_for('main') }}" class="home-link"><i class="bi bi-arrow-left"></i> Return Home</a>
+      </div>
+
     </div>
   </header>
 
   <main class="main">
-    <!-- Hero Section -->
+    
     <section id="hero" class="hero section light-background">
       <div class="container">
-        <div class="row gy-4 justify-content-center justify-content-lg-between">
-          <div class="col-lg-12 order-2 order-lg-1 d-flex flex-column justify-content-center">
-            <h1 data-aos="fade-up">Search By Nutrition</h1>
-            <p data-aos="fade-up" data-aos-delay="100">search Recipes Based on nutrition chart</p>
-            <div class="recipe-container" id="recipeContainer"></div>
-    
-            <div class="pagination">
-              <button id="prevBtn" onclick="prevPage()" disabled>Prev</button>
-              <button id="nextBtn" onclick="nextPage()">Next</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section><!-- /Hero Section -->
+        <div class="row gy-4 justify-content-center">
+          <div class="col-lg-12 text-center">
+            
+            <h1 data-aos="fade-up" style="font-family: 'Amatic SC', cursive; font-size: 3.5rem;">
+               <i class="fa-solid fa-heart-pulse" style="color:#ce1212;"></i> 
+               Search By Nutrition 
+               <i class="fa-solid fa-apple-whole" style="color:#46bb46;"></i>
+            </h1>
+            
+            <p data-aos="fade-up" data-aos-delay="100">
+              <i class="fa-solid fa-chart-pie" style="color:#666;"></i> Filter recipes based on your dietary needs
+            </p>
 
-    <!-- Liked Recipes Section -->
-    <section id="liked-recipes" class="section">
-      <div class="container">
-        <div class="liked-recipes-container" id="likedRecipesContainer">
-          <!-- Liked recipes will be dynamically inserted here -->
+          </div>
         </div>
       </div>
     </section>
 
+    <section class="section">
+        <div class="container">
+            <div class="recipe-container" id="recipeContainer">
+                <p class="no-results" style="display:block;">Open the filters to find recipes!</p>
+            </div>
+
+            <div class="pagination">
+                <button id="prevBtn" onclick="prevPage()" disabled>Prev</button>
+                <button id="nextBtn" onclick="nextPage()">Next</button>
+            </div>
+        </div>
+    </section>
+
   </main>
 
-  <!-- Filter Card (hidden by default) -->
   <div class="overlay" id="filterOverlay"></div>
   <div class="filter-card" id="filterCard">
     <button class="close-filter-btn" id="closeFilterBtn">&times;</button>
-    <h2>Filter Recipes</h2>
-    <form action="/filter_recipes" method="POST" class="filter-container" id="filterForm">
-      <div class="filter-item">
-        <label for="calories">Calories:</label>
-        <div class="slider-container">
-          <input type="range" id="calories" name="calories" min="0" max="1000" step="1" value="0">
-          <span id="calories-value">0 kcal</span>
-        </div>
-      </div>
-
-      <div class="filter-item">
-        <label for="protein">Protein:</label>
-        <div class="slider-container">
-          <input type="range" id="protein" name="protein" min="0" max="500" step="1" value="0">
-          <span id="protein-value">0g</span>
-        </div>
-      </div>
-
-      <div class="filter-item">
-        <label for="carbs">Carbs:</label>
-        <div class="slider-container">
-          <input type="range" id="carbs" name="carbs" min="0" max="500" step="1" value="0">
-          <span id="carbs-value">0g</span>
-        </div>
-      </div>
-
-      <div class="filter-item">
-        <label for="fats">Fats:</label>
-        <div class="slider-container">
-          <input type="range" id="fats" name="fats" min="0" max="300" step="1" value="0">
-          <span id="fats-value">0g</span>
-        </div>
-      </div>
-
-      <div class="filter-item">
-        <label for="sugar">Sugar:</label>
-        <div class="slider-container">
-          <input type="range" id="sugar" name="sugar" min="0" max="200" step="1" value="0">
-          <span id="sugar-value">0g</span>
-        </div>
-      </div>
-
-      <div class="filter-item">
-        <label for="fiber">Fiber:</label>
-        <div class="slider-container">
-          <input type="range" id="fiber" name="fiber" min="0" max="100" step="1" value="0">
-          <span id="fiber-value">0g</span>
-        </div>
-      </div>
-
-      <div class="filter-item">
-        <label for="cholesterol">Cholesterol:</label>
-        <div class="slider-container">
-          <input type="range" id="cholesterol" name="cholesterol" min="0" max="500" step="1" value="0">
-          <span id="cholesterol-value">0mg</span>
-        </div>
-      </div>
-
+    <h3 style="text-align:center; font-family:'Amatic SC'; font-weight:bold; color:#4682eb;">Nutritional Filters</h3>
+    
+    <form id="filterForm" class="filter-container">
+      <div class="filter-item"><label>Calories:</label><div class="slider-container"><input type="range" id="calories" min="0" max="1000" value="0"><span id="calories-value">0</span></div></div>
+      <div class="filter-item"><label>Protein:</label><div class="slider-container"><input type="range" id="protein" min="0" max="1000" value="0"><span id="protein-value">0</span></div></div>
+      <div class="filter-item"><label>Carbs:</label><div class="slider-container"><input type="range" id="carbs" min="0" max="1000" value="0"><span id="carbs-value">0</span></div></div>
+      <div class="filter-item"><label>Fats:</label><div class="slider-container"><input type="range" id="fats" min="0" max="1000" value="0"><span id="fats-value">0</span></div></div>
+      <div class="filter-item"><label>Sugar:</label><div class="slider-container"><input type="range" id="sugar" min="0" max="1000" value="0"><span id="sugar-value">0</span></div></div>
+      <div class="filter-item"><label>Fiber:</label><div class="slider-container"><input type="range" id="fiber" min="0" max="1000" value="0"><span id="fiber-value">0</span></div></div>
+      <div class="filter-item"><label>Cholesterol:</label><div class="slider-container"><input type="range" id="cholesterol" min="0" max="1000" value="0"><span id="cholesterol-value">0</span></div></div>
+      
       <button class="filter-btn" type="submit">Apply Filters</button>
     </form>
   </div>
 
-  <!-- Filter Toggle Button -->
   <button class="filter-toggle-btn" id="filterToggleBtn">
-    <i class="bi bi-funnel-fill"></i> Filter Recipes
+    <i class="fa-solid fa-sliders"></i> Filters
   </button>
 
   <footer id="footer" class="footer dark-background">
-    <div class="container">
-      <div class="row gy-3">
-        <!-- Follow Us Section -->
-        <div class="col-lg-3 col-md-6">
-          <h4>Follow Us</h4>
-          <div class="social-links d-flex">
-            <a href="#" class="twitter"><i class="bi bi-twitter-x"></i></a>
-            <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
-            <a href="#" class="instagram"><i class="bi bi-instagram"></i></a>
-            <a href="#" class="linkedin"><i class="bi bi-linkedin"></i></a>
-          </div>
-        </div>
-      </div>
-    </div>
-  
-    <!-- Copyright Section -->
-    <div class="container copyright text-center mt-4">
-      <p>© <span>Copyright</span> <strong class="px-1 sitename">Recipe Book</strong> <span>All Rights Reserved</span></p>
-      <div class="credits">
-        Designed using <a href="https://bootstrapmade.com/">BootstrapMade</a></a>
-      </div>
+    <div class="container text-center">
+      <p>© <span>Copyright</span> <strong class="px-1 sitename">RecipeBook</strong> <span>All Rights Reserved</span></p>
     </div>
   </footer>
 
-  <!-- Scroll Top -->
+  <i class="mobile-nav-toggle d-none"></i>
   <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-
-  <!-- Preloader -->
   <div id="preloader"></div>
 
-  <!-- Vendor JS Files -->
-  <script src="static/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="static/assets/vendor/php-email-form/validate.js"></script>
-  <script src="static/assets/vendor/aos/aos.js"></script>
-  <script src="static/assets/vendor/glightbox/js/glightbox.min.js"></script>
-  <script src="static/assets/vendor/purecounter/purecounter_vanilla.js"></script>
-  <script src="static/assets/vendor/swiper/swiper-bundle.min.js"></script>
-
-  <!-- Main JS File -->
-  <script src="static/assets/js/main.js"></script>
+  <script src="{{ url_for('static', filename='assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/vendor/aos/aos.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/vendor/glightbox/js/glightbox.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/vendor/swiper/swiper-bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/js/main.js') }}"></script>
 
   <script>
+    /* DROPDOWN LOGIC */
+    document.addEventListener("DOMContentLoaded", function() {
+        const toggleBtn = document.getElementById('customMobileToggle');
+        const dropdown = document.getElementById('customMobileDropdown');
+        if (toggleBtn && dropdown) {
+            toggleBtn.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                dropdown.classList.toggle('active');
+                this.classList.toggle('bi-list'); this.classList.toggle('bi-x');
+            });
+            document.addEventListener('click', function(e) {
+                if (dropdown.classList.contains('active') && !dropdown.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    dropdown.classList.remove('active');
+                    toggleBtn.classList.remove('bi-x'); toggleBtn.classList.add('bi-list');
+                }
+            });
+        }
+        
+        // Filter UI Logic
+        const filterToggleBtn = document.getElementById("filterToggleBtn");
+        const filterCard = document.getElementById("filterCard");
+        const closeFilterBtn = document.getElementById("closeFilterBtn");
+        const filterOverlay = document.getElementById("filterOverlay");
+
+        function openFilter() { filterCard.style.display = "block"; filterOverlay.style.display = "block"; }
+        function closeFilter() { filterCard.style.display = "none"; filterOverlay.style.display = "none"; }
+
+        if(filterToggleBtn) filterToggleBtn.addEventListener("click", openFilter);
+        if(closeFilterBtn) closeFilterBtn.addEventListener("click", closeFilter);
+        if(filterOverlay) filterOverlay.addEventListener("click", closeFilter);
+
+        // Update Slider Values
+        ['calories', 'protein', 'carbs', 'fats', 'sugar', 'fiber', 'cholesterol'].forEach(id => {
+            const slider = document.getElementById(id);
+            const span = document.getElementById(id + "-value");
+            slider.addEventListener("input", () => span.textContent = slider.value);
+        });
+    });
+
+    /* SEARCH LOGIC - WIRED TO BACKEND */
+    const form = document.getElementById("searchForm");
+    const input = document.getElementById("searchInput");
+    if(form){
+        form.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            if (!form.classList.contains("expanded") || input.value.trim() === "") {
+                form.classList.add("expanded"); input.focus(); return;
+            }
+            
+            const submitBtn = document.getElementById("searchBtn");
+            const originalIcon = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ search: input.value })
+                });
+
+                if (response.redirected) {
+                     window.location.href = response.url;
+                } else {
+                     const data = await response.json();
+                     if (data.redirect) {
+                         window.location.href = data.redirect;
+                     } else {
+                         alert(data.message || "Recipe not found.");
+                     }
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Search failed. Please try again.");
+            } finally {
+                submitBtn.innerHTML = originalIcon;
+            }
+        });
+        document.addEventListener("click", function(e) {
+            if (!form.contains(e.target) && input.value === "") form.classList.remove("expanded");
+        });
+    }
+
+    /* RECIPE & FILTER LOGIC */
     let currentPage = 0;
-    const itemsPerPage = 5;
+    const itemsPerPage = 6;
+    let recipes = []; // Starts empty, filled via AJAX
 
-    // Change from const to let to allow updates
-    let recipes = [
-      {% for recipe in filtered_recipes %}
-        {
-          name: "{{ recipe.name }}",
-          url: "{{ recipe.url }}",
-          image: "{{ recipe.image }}",  
-          defaultImage: "{{ recipe.default_image }}"
-        },
-      {% endfor %}
-    ];
-
-    let totalPages = Math.ceil(recipes.length / itemsPerPage);
     const recipeContainer = document.getElementById("recipeContainer");
 
     function showPage(page) {
-      recipeContainer.innerHTML = "";
-      
-      if (recipes.length === 0) {
-        recipeContainer.innerHTML = '<div class="no-results">No recipes found matching your filters</div>';
-        document.getElementById("prevBtn").disabled = true;
-        document.getElementById("nextBtn").disabled = true;
-        return;
-      }
+        recipeContainer.innerHTML = "";
+        if (recipes.length === 0) {
+            recipeContainer.innerHTML = '<div class="no-results">No recipes found matching your filters.</div>';
+            document.getElementById("prevBtn").disabled = true;
+            document.getElementById("nextBtn").disabled = true;
+            return;
+        }
 
-      const start = page * itemsPerPage;
-      const end = start + itemsPerPage;
-
-      recipes.slice(start, end).forEach(recipe => {
-        const recipeElement = document.createElement("div");
-        recipeElement.className = "block-container";
-        recipeElement.innerHTML = `
-          <div class="btn-back" style="background: linear-gradient(135deg, #4682eb -20%, #01beff 120%);"></div>
-          <div class="btn-front">
-            <a href="${recipe.url}" class="recipe-button">
-              <img src="${recipe.image}" 
-                   onerror="this.onerror=null; this.src='${recipe.defaultImage}';" 
-                   class="recipe-image">
-              <div class="recipe-name">${recipe.name}</div>
-            </a>
-          </div>
-        `;
-        recipeContainer.appendChild(recipeElement);
-      });
-
-      document.getElementById("prevBtn").disabled = page === 0;
-      document.getElementById("nextBtn").disabled = page >= totalPages - 1;
-    }
-
-    function nextPage() {
-      if (currentPage < totalPages - 1) {
-        currentPage++;
-        showPage(currentPage);
-      }
-    }
-
-    function prevPage() {
-      if (currentPage > 0) {
-        currentPage--;
-        showPage(currentPage);
-      }
-    }
-
-    // Show the first page on load
-    showPage(currentPage);
-
-    // Search functionality
-    document.getElementById("searchButton").addEventListener("click", function() {
-      const searchContainer = document.getElementById("searchContainer");
-      searchContainer.classList.toggle("active");
-    });
-
-    document.getElementById("searchForm").addEventListener("submit", async function(event) {
-      event.preventDefault();
-      let searchQuery = document.getElementById("searchInput").value;
-      let response = await fetch('/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ search: searchQuery })
-      });
-  
-      let result = await response.json();
-      if (result.redirect) {
-        window.location.href = result.redirect;
-      } else {
-        alert(result.message);
-      }
-    });
-
-    // Filter functionality
-    document.addEventListener("DOMContentLoaded", function() {
-      // Update slider values
-      const updateValue = (id, unit) => {
-        const slider = document.getElementById(id);
-        const valueSpan = document.getElementById(id + "-value");
-        valueSpan.textContent = slider.value + unit;
-
-        slider.addEventListener("input", function() {
-          valueSpan.textContent = this.value + unit;
+        const start = page * itemsPerPage;
+        const end = start + itemsPerPage;
+        recipes.slice(start, end).forEach(recipe => {
+            const el = document.createElement("div");
+            el.className = "block-container";
+            el.innerHTML = `
+                <div class="btn-back"></div>
+                <div class="btn-front">
+                    <a href="${recipe.url}" class="recipe-button">
+                        <img src="${recipe.image}" onerror="this.onerror=null; this.src='/static/images/default.jpg';" class="recipe-image">
+                        <div class="recipe-name">${recipe.name}</div>
+                    </a>
+                </div>`;
+            recipeContainer.appendChild(el);
         });
-      };
+        document.getElementById("prevBtn").disabled = page === 0;
+        document.getElementById("nextBtn").disabled = page >= Math.ceil(recipes.length/itemsPerPage) - 1;
+    }
 
-      updateValue("calories", " kcal");
-      updateValue("protein", "g");
-      updateValue("carbs", "g");
-      updateValue("fats", "g");
-      updateValue("sugar", "g");
-      updateValue("fiber", "g");
-      updateValue("cholesterol", "mg");
+    function nextPage() { if (currentPage < Math.ceil(recipes.length/itemsPerPage) - 1) { currentPage++; showPage(currentPage); } }
+    function prevPage() { if (currentPage > 0) { currentPage--; showPage(currentPage); } }
 
-      // Filter toggle
-      const filterToggleBtn = document.getElementById("filterToggleBtn");
-      const filterCard = document.getElementById("filterCard");
-      const closeFilterBtn = document.getElementById("closeFilterBtn");
-      const filterOverlay = document.getElementById("filterOverlay");
-
-      filterToggleBtn.addEventListener("click", function() {
-        filterCard.style.display = "block";
-        filterOverlay.style.display = "block";
-      });
-
-      closeFilterBtn.addEventListener("click", function() {
-        filterCard.style.display = "none";
-        filterOverlay.style.display = "none";
-      });
-
-      filterOverlay.addEventListener("click", function() {
-        filterCard.style.display = "none";
-        filterOverlay.style.display = "none";
-      });
-
-      // Filter form submission
-      document.getElementById("filterForm").addEventListener("submit", async function(event) {
-        event.preventDefault();
+    // Filter Form Submit
+    document.getElementById("filterForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.innerText = "Applying...";
         
-        const submitBtn = event.target.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Applying...';
-
-        try {
-          // Collect filter values
-          const filters = {
+        const filters = {
             calories: document.getElementById("calories").value,
             protein: document.getElementById("protein").value,
             carbs: document.getElementById("carbs").value,
@@ -783,43 +405,27 @@ body {
             sugar: document.getElementById("sugar").value,
             fiber: document.getElementById("fiber").value,
             cholesterol: document.getElementById("cholesterol").value
-          };
+        };
 
-          const response = await fetch('/filter_recipes', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(filters)
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const result = await response.json();
-          
-          if (result.success) {
-            // Update recipes and pagination
-            recipes = result.filtered_recipes;
-            currentPage = 0;
-            totalPages = Math.ceil(recipes.length / itemsPerPage);
-            showPage(currentPage);
+        try {
+            const response = await fetch('/filter_recipes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(filters)
+            });
+            const result = await response.json();
             
-            // Close filter dialog
-            filterCard.style.display = "none";
-            filterOverlay.style.display = "none";
-          } else {
-            throw new Error(result.error || "Failed to apply filters");
-          }
-        } catch (error) {
-          console.error("Filter error:", error);
-          alert(`Error: ${error.message}`);
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.textContent = originalText;
-        }
-      });
+            if (result.success) {
+                recipes = result.filtered_recipes;
+                currentPage = 0;
+                showPage(0);
+                document.getElementById("filterCard").style.display = "none";
+                document.getElementById("filterOverlay").style.display = "none";
+            } else {
+                alert("Filter failed.");
+            }
+        } catch(err) { console.error(err); } 
+        finally { submitBtn.innerText = "Apply Filters"; }
     });
   </script>
 </body>

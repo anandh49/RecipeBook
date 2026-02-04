@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>{{ recipe.title }} - RecipeBook</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Amatic+SC:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <link href="/static/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/static/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="/static/assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="/static/assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="/static/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+  <link href="/static/assets/css/main.css" rel="stylesheet">
+  <link href="/static/styles.css" rel="stylesheet">
+  <link href="/static/recipe.css" rel="stylesheet">
+
+  <style>
+    /* PRESERVED STYLES */
+    .header .container { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; position: relative; }
+    .logo { text-decoration: none; display: flex; align-items: baseline; padding-left: 5px; }
+    .logo h1 { margin: 0; font-family: 'Amatic SC', sans-serif; font-size: 2.5rem; color: #37373f; line-height: 1; }
+    .logo span { color: #ce1212; font-size: 2.5rem; font-family: 'Amatic SC', sans-serif; padding-left: 2px; }
+    #navmenu { margin-left: auto; margin-right: 20px; }
+    .header-right-group { display: flex; align-items: center; gap: 10px; position: relative; }
+
+    #searchForm { display: flex; align-items: center; border-radius: 50px; background: transparent; border: 2px solid transparent; transition: all 0.3s ease; overflow: hidden; position: relative; }
+    #searchForm.expanded { background-color: white; border: 2px solid #ce1212; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    #searchInput { width: 0; padding: 0; border: none; outline: none; background: transparent; transition: width 0.4s ease; font-size: 16px; }
+    #searchForm.expanded #searchInput { width: 200px; padding: 5px 15px; }
+    #searchBtn { background: transparent !important; color: #000; border: none; padding: 8px 12px; cursor: pointer; font-size: 20px; }
+    
+    .icon-trigger { color: #000; font-size: 22px; cursor: pointer; margin-left: 10px; }
+    .custom-toggle-btn { color: #000; font-size: 32px; cursor: pointer; z-index: 10000; margin-left: 5px; display: none; }
+
+    .mobile-dropdown-menu { display: none; position: absolute; top: 60px; right: 15px; width: 200px; background: white; box-shadow: 0 8px 16px rgba(0,0,0,0.2); border-radius: 8px; z-index: 9999; border: 1px solid #eee; }
+    .mobile-dropdown-menu.active { display: block; animation: fadeIn 0.3s ease; }
+    .mobile-dropdown-menu a { display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #f0f0f0; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    #head { font-size: 3.5rem; color: #ce1212; font-family: 'Amatic SC', cursive; margin-bottom: 10px; line-height: 1; }
+    #description { font-size: 1.1rem; color: #555; margin-bottom: 20px; }
+    .hero-img img { border-radius: 20px; background: transparent !important; border: none !important; box-shadow: none !important; }
+
+    /* PRESERVED: INGREDIENTS IMAGE (Bigger 550px & Right-Center) */
+    #image-ing {
+        width: 100%;
+        max-width: 550px;      
+        aspect-ratio: 1 / 1;   
+        object-fit: cover;
+        display: block;
+        margin-left: auto;     
+        margin-right: 10%;     
+        border-radius: 20px;
+    }
+
+    .rings-wrapper { display: flex; gap: 20px; align-items: center; margin-top: 25px; }
+    .info-ring { width: 90px; height: 90px; border-radius: 50%; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border: 4px solid #f8f9fa; transition: transform 0.3s; }
+    .info-ring:hover { transform: scale(1.05); }
+    
+    /* Default Highlight (Red) */
+    .info-ring.highlight { border-color: #ce1212; color: #ce1212; }
+    .info-ring.highlight i, .info-ring.highlight span.icon { color: #ce1212; }
+    
+    /* --- DYNAMIC MEAL COLORS (Matching Category List) --- */
+    .info-ring.highlight.breakfast { border-color: #f9a825; color: #f9a825; }
+    .info-ring.highlight.breakfast i, .info-ring.highlight.breakfast span.icon { color: #f9a825; }
+
+    .info-ring.highlight.brunch { border-color: #f57f17; color: #f57f17; }
+    .info-ring.highlight.brunch i, .info-ring.highlight.brunch span.icon { color: #f57f17; }
+
+    .info-ring.highlight.lunch { border-color: #ef6c00; color: #ef6c00; }
+    .info-ring.highlight.lunch i, .info-ring.highlight.lunch span.icon { color: #ef6c00; }
+
+    .info-ring.highlight.dinner { border-color: #3949ab; color: #3949ab; }
+    .info-ring.highlight.dinner i, .info-ring.highlight.dinner span.icon { color: #3949ab; }
+
+    .info-ring.highlight.dessert { border-color: #d81b60; color: #d81b60; }
+    .info-ring.highlight.dessert i, .info-ring.highlight.dessert span.icon { color: #d81b60; }
+
+    .info-ring.highlight.drinks { border-color: #00838f; color: #00838f; }
+    .info-ring.highlight.drinks i, .info-ring.highlight.drinks span.icon { color: #00838f; }
+
+    /* Veg Style (Green) */
+    .info-ring.veg { border-color: #28a745; color: #28a745; }
+    .info-ring.veg i, .info-ring.veg span.icon { color: #28a745; margin-bottom: 2px; font-size: 1.6rem; }
+    
+    .info-ring i, .info-ring span.icon { font-size: 1.6rem; margin-bottom: 2px; color: #ce1212; }
+    .info-ring strong { font-size: 1.1rem; line-height: 1; font-family: 'Amatic SC', cursive; font-weight: bold; color: #333; }
+    .info-ring small { font-size: 0.7rem; text-transform: uppercase; color: #888; letter-spacing: 1px; font-weight: 600; }
+
+    .rec-footer-container { display: flex; justify-content: flex-end; margin-top: 5px; padding-right: 10px; }
+    #inline-recommendation-box { position: relative; z-index: 10; display: flex; align-items: center; background: white; padding: 8px 15px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; width: 250px; height: 85px; transition: all 0.3s ease; }
+    #inline-recommendation-box h6 { position: absolute; top: -8px; left: 15px; background: #ce1212; color: white; padding: 2px 8px; border-radius: 8px; font-size: 0.6rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+    
+    .rec-item { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #333; width: 100%; }
+    .rec-item img { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; }
+    .rec-item .rec-name { font-family: 'Amatic SC', cursive; font-size: 1.3rem; font-weight: bold; line-height: 1.1; text-align: left; }
+    
+    .section-title h2 { text-align: center; margin: 0; }
+    .section-title p { text-align: center; }
+
+    .video-responsive { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .video-responsive iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    #like-button { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #ce1212; transition: transform 0.2s; }
+    #like-button:hover { transform: scale(1.2); }
+
+    .btn-delete { background: none; border: none; color: #aaa; cursor: pointer; transition: 0.3s; }
+    .btn-delete:hover { color: #ce1212; }
+
+    @media (max-width: 1200px) { 
+        .header-right-group { margin-left: auto; gap: 0px; }
+        
+        /* Reduced font size for logo */
+        .logo h1, .logo span { font-size: 1.6rem; } 
+        
+        .custom-toggle-btn { display: block; }
+        #navmenu { display: none; }
+        
+        /* UPDATED: Increased RIGHT to 75px to separate search from like button */
+        #searchForm { position: absolute; right: 75px; top: 50%; transform: translateY(-50%); z-index: 50; background: transparent; border: none; }
+        
+        #searchForm.expanded { background-color: white; border: 2px solid #ce1212; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* UPDATED: Width 100px ensures it stops before the logo */
+        #searchForm.expanded #searchInput { width: 100px; padding: 5px 10px; }
+
+        .hero { text-align: center; padding-top: 30px; }
+        .col-text { order: 1; }
+        .col-image { order: 2; margin-top: 10px; margin-bottom: 20px; }
+        #head { font-size: 3rem; margin-bottom: 5px; }
+        #description { margin-bottom: 5px; font-size: 1rem; }
+        
+        .desktop-rings { display: none !important; }
+        .mobile-rings { display: flex !important; justify-content: center; margin-top: 15px; margin-bottom: 10px; }
+        .content.ps-lg-5 { padding-left: 0 !important; }
+
+        .rec-footer-container { justify-content: flex-end; padding-right: 0; margin-top: 5px; }
+        #inline-recommendation-box { width: 100px !important; height: 100px !important; padding: 5px !important; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #inline-recommendation-box h6 { position: static; margin-bottom: 3px; font-size: 0.8rem; font-weight: 900; background: transparent; color: #ce1212; padding: 0; width: 100%; text-align: center; }
+        .rec-item { flex-direction: column; gap: 2px; justify-content: center; width: 100%; }
+        .rec-item img { width: 50px; height: 50px; border-radius: 8px; margin: 0; }
+        .rec-item .rec-name { display: block; font-size: 0.7rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; line-height: 1.2; }
+    }
+    @media (min-width: 1201px) {
+        .hero { text-align: left; }
+        .rings-wrapper.desktop-rings { justify-content: flex-start; }
+        .mobile-rings { display: none; }
+    }
+  </style>
+</head>
+
+<body class="index-page">
+
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container">
+      <div class="brand-group">
+          <a href="{{ url_for('main') }}" class="logo">
+            <h1 class="sitename">RecipeBook</h1>
+            <span>.</span>
+          </a>
+      </div>
+      <nav id="navmenu" class="navmenu ms-auto d-none d-xl-block">
+        <ul>
+          <li><a href="{{ url_for('main') }}" class="active">Home</a></li>
+          <li><a href="#about">Ingredients</a></li>
+          <li><a href="#menu">Instructions</a></li>
+          <li><a href="#nut">Nutrition</a></li>
+        </ul>
+      </nav>
+      <div class="header-right-group">
+          <form id="searchForm">
+              <input type="text" id="searchInput" name="search" placeholder="Search...">
+              <button type="submit" id="searchBtn"><i class="fa-solid fa-magnifying-glass"></i></button>
+          </form>
+
+          <button id="like-button" onclick="likeRecipe()"><i class="far fa-heart"></i></button>
+          
+          <a href="{{ url_for('main') }}" class="icon-trigger d-none d-xl-flex"><i class="fa-solid fa-arrow-left"></i></a>
+          <i id="customMobileToggle" class="custom-toggle-btn bi bi-list"></i>
+      </div>
+      <div id="customMobileDropdown" class="mobile-dropdown-menu">
+          <a href="#hero">Recipe Top</a>
+          <a href="#about">Ingredients</a>
+          <a href="#menu">Instructions</a>
+          <a href="#nut">Nutrition</a>
+          <div style="border-top: 1px solid #ddd; margin: 5px 0;"></div>
+          <a href="{{ url_for('main') }}" class="home-link"><i class="bi bi-arrow-left"></i> Return Home</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <section id="hero" class="hero section light-background">
+      <div class="container" style="position: relative;">
+        <div class="row gy-4 justify-content-center justify-content-lg-between align-items-center">
+          <div class="col-lg-5 col-text d-flex flex-column justify-content-center">
+            <h1 id="head" data-aos="fade-up">{{ recipe.title }}</h1>
+            <p id="description" data-aos="fade-up" data-aos-delay="100">{{ recipe.description }}</p>
+            
+            <div class="rings-wrapper desktop-rings" data-aos="fade-up" data-aos-delay="200">
+                <div class="info-ring">
+                    <i class="fa-regular fa-clock"></i>
+                    <strong>{{ recipe.prep_time }}</strong>
+                    <small>MINS</small>
+                </div>
+
+                <div class="info-ring highlight {{ recipe.meal_type|lower }}">
+                    {% if recipe.meal_type == 'Breakfast' %}
+                        <i class="fas fa-bread-slice"></i>
+                    {% elif recipe.meal_type == 'Brunch' %}
+                        <i class="fas fa-bacon"></i>
+                    {% elif recipe.meal_type == 'Lunch' %}
+                        <i class="fas fa-hamburger"></i>
+                    {% elif recipe.meal_type == 'Dinner' %}
+                        <i class="fas fa-utensils"></i>
+                    {% elif recipe.meal_type == 'Dessert' %}
+                        <i class="fas fa-ice-cream"></i>
+                    {% elif recipe.meal_type == 'Drinks' %}
+                        <i class="fas fa-cocktail"></i>
+                    {% else %}
+                        <i class="fas fa-utensils"></i>
+                    {% endif %}
+                    <strong id="mealLabel">{{ recipe.meal_type }}</strong>
+                    <small>Type</small>
+                </div>
+
+                {% if 'non' in recipe.category|lower %}
+                <div class="info-ring highlight">
+                    <i class="fas fa-drumstick-bite"></i>
+                    <strong>Non-Veg</strong>
+                    <small>Diet</small>
+                </div>
+                {% else %}
+                <div class="info-ring veg">
+                    <i class="fas fa-leaf"></i>
+                    <strong>Veg</strong>
+                    <small>Diet</small>
+                </div>
+                {% endif %}
+            </div>
+            
+          </div>
+          <div class="col-lg-5 col-image hero-img" data-aos="zoom-out">
+            <img src="{{ recipe.image_url }}" class="img-fluid rounded-4" alt="{{ recipe.title }}" onerror="this.onerror=null; this.src='https://placehold.co/600x400?text=No+Image';">
+            
+            <div class="rings-wrapper mobile-rings" data-aos="fade-up">
+                <div class="info-ring">
+                    <i class="fa-regular fa-clock"></i>
+                    <strong>{{ recipe.prep_time }}</strong>
+                    <small>MINS</small>
+                </div>
+
+                <div class="info-ring highlight {{ recipe.meal_type|lower }}">
+                    {% if recipe.meal_type == 'Breakfast' %}
+                        <i class="fas fa-bread-slice"></i>
+                    {% elif recipe.meal_type == 'Brunch' %}
+                        <i class="fas fa-bacon"></i>
+                    {% elif recipe.meal_type == 'Lunch' %}
+                        <i class="fas fa-hamburger"></i>
+                    {% elif recipe.meal_type == 'Dinner' %}
+                        <i class="fas fa-utensils"></i>
+                    {% elif recipe.meal_type == 'Dessert' %}
+                        <i class="fas fa-ice-cream"></i>
+                    {% elif recipe.meal_type == 'Drinks' %}
+                        <i class="fas fa-cocktail"></i>
+                    {% else %}
+                        <i class="fas fa-utensils"></i>
+                    {% endif %}
+                    <strong id="mealLabelMobile">{{ recipe.meal_type }}</strong>
+                    <small>Type</small>
+                </div>
+
+                {% if 'non' in recipe.category|lower %}
+                <div class="info-ring highlight">
+                    <i class="fas fa-drumstick-bite"></i>
+                    <strong>Non-Veg</strong>
+                    <small>Diet</small>
+                </div>
+                {% else %}
+                <div class="info-ring veg">
+                    <i class="fas fa-leaf"></i>
+                    <strong>Veg</strong>
+                    <small>Diet</small>
+                </div>
+                {% endif %}
+            </div>
+            
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="about section" style="padding-bottom: 5px;">
+      <div class="container" data-aos="fade-up">
+        <div class="section-title" style="text-align: center; margin-bottom: 40px;">
+            <h2 style="margin-bottom:0;">what you need</h2>
+            <p><span>Ingre</span> <span class="description-title">DIENTS</span></p>
+        </div>
+        <div class="row gy-4">
+          <div class="col-lg-7">
+            <div class="video-container">
+               <img id="image-ing" src="{{ original_image }}" class="img-fluid shadow" alt="Ingredients" onerror="this.onerror=null; this.src='https://placehold.co/600x400?text=Ingredients';">
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="content ps-0 ps-lg-5">
+              <p class="fst-italic fs-5">For the perfect {{ recipe.title }}, you'll need these fresh ingredients:</p>
+              <ul id="ingredients" class="list-group list-group-flush" style="font-size: 1.1rem; list-style: none;">
+                {% for ing in ingredients %}
+                    <li><i class="bi bi-check-circle-fill" style="color:#ce1212;"></i> {{ ing }}</li>
+                {% else %}
+                    <li>No specific ingredients listed.</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="rec-footer-container">
+            <div id="inline-recommendation-box">
+                <h6>Try Next:</h6>
+                <div id="rec-content" style="width:100%;">Loading...</div>
+            </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="menu" class="menu section" style="padding-top: 5px;">
+      <div class="container">
+        <div class="section-title" style="text-align: center; margin-bottom: 40px;">
+            <h2 style="margin-bottom:0;">How to make it</h2>
+            <p><span>Step-by-step</span> <span class="description-title">Instructions</span></p>
+        </div>
+        <div class="row gy-4">
+          <div class="col-lg-6">
+            <div class="content ps-0 ps-lg-5">
+              <ol class="instruction-list" id="instructions">
+                {% for step in instructions %}
+                    <li>{{ step }}</li>
+                {% endfor %}
+              </ol>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="video-responsive">
+              {% if recipe.video_url %}
+                  {% if 'watch?v=' in recipe.video_url %}
+                    <iframe src="{{ recipe.video_url.replace('watch?v=', 'embed/') }}" id="video" frameborder="0" allowfullscreen></iframe>
+                  {% else %}
+                    <iframe src="{{ recipe.video_url }}" id="video" frameborder="0" allowfullscreen></iframe>
+                  {% endif %}
+              {% else %}
+                  <div class="d-flex align-items-center justify-content-center h-100 bg-light text-muted">
+                      No Video Available
+                  </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {% if fun_facts or tips %}
+    <section id="extras" class="section light-background">
+      <div class="container">
+        <div class="row gy-4 justify-content-center">
+          {% if fun_facts %}
+          <div class="col-md-5 mb-4">
+            <div class="p-4 rounded-4 bg-white h-100 shadow-sm border text-center">
+              <h3 style="font-family:'Amatic SC'; font-weight:bold; font-size:2rem; color:#ce1212;">Fun Facts</h3>
+              <ul id="fun" class="list-unstyled">
+                  {% for fact in fun_facts %}
+                    <li>{{ fact }}</li>
+                  {% endfor %}
+              </ul>
+            </div>
+          </div>
+          {% endif %}
+          {% if tips %}
+          <div class="col-md-5 mb-4">
+            <div class="p-4 rounded-4 bg-white h-100 shadow-sm border text-center">
+              <h3 style="font-family:'Amatic SC'; font-weight:bold; font-size:2rem; color:#ce1212;">Tips & Tricks</h3>
+              <ul id="tips" class="list-unstyled">
+                  {% for tip in tips %}
+                    <li>{{ tip }}</li>
+                  {% endfor %}
+              </ul>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <section id="nut" class="nutrition-section section">
+      <div class="container section-title" data-aos="fade-up"><h2>Nutritional Value</h2><p><span>Per Serving</span> <span class="description-title">Nutrition Facts</span></p></div>
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-lg-8" data-aos="fade-up">
+            <div class="nutrition-facts p-4 rounded bg-white shadow-sm border">
+              <ul class="nutrition-list list-unstyled" id="nutrition">
+                {% for name, value in nutrition.items() %}
+                    <li><i class="bi bi-check-circle-fill"></i> <strong>{{ name }}:</strong> {{ value }}</li>
+                {% else %}
+                    <li>Nutrition data not available.</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section light-background" id="comments-section">
+      <div class="container section-title" data-aos="fade-up"><h2>Comments</h2><p>Share Your <span class="description-title">Thoughts</span></p></div>
+      <div class="container" style="max-width: 800px;">
+        <form method="POST" class="mb-5">
+            <div class="mb-3"><textarea name="comment" class="form-control" rows="4" placeholder="✍️ Write your thoughtful comment here..." required style="border-radius: 20px; padding: 15px;"></textarea></div>
+            <div class="text-center"><button type="submit" class="btn btn-danger rounded-pill px-4 py-2">Post Comment</button></div>
+        </form>
+        <div class="comments-container bg-white p-4 rounded-3 shadow-sm border">
+            {% if comments %}
+              {% for c in comments %}
+                <div class="comment mb-3 border-bottom pb-3" id="comment-{{ c.id }}">
+                  <div class="d-flex justify-content-between">
+                    <div><strong style="color: #ce1212;">{{ c.username }}</strong><small class="text-muted ms-2">{{ c.timestamp }}</small><p class="mt-2 mb-0">{{ c.comment }}</p></div>
+                    
+                    {% if c.username == user or is_admin %}
+                        <button onclick="deleteComment({{ c.id }})" class="btn-delete" title="Delete Comment"><i class="fa-solid fa-trash-can"></i></button>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}<p class="text-center text-muted">No comments yet. Be the first!</p>{% endif %}
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="contact section">
+      <div class="container section-title" data-aos="fade-up"><h2>Contact</h2><p><span>Need Help?</span> <span class="description-title">Contact Us</span></p></div>
+      <div class="container"><div class="row gy-4"><div class="col-md-6"><div class="info-item d-flex align-items-center"><i class="icon bi bi-geo-alt flex-shrink-0"></i><div><h3>Social Media</h3><a href="#" class="text-dark text-decoration-none">Contact Us Page</a></div></div></div><div class="col-md-6"><div class="info-item d-flex align-items-center"><i class="icon bi bi-envelope flex-shrink-0"></i><div><h3>Email Us</h3><p>recipebook@example.com</p></div></div></div></div></div>
+    </section>
+
+  </main>
+
+  <footer id="footer" class="footer dark-background">
+    <div class="container text-center"><p>© <span>Copyright</span> <strong class="px-1 sitename">Recipe Book</strong> <span>All Rights Reserved</span></p></div>
+  </footer>
+
+  <i class="mobile-nav-toggle d-none"></i>
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+  <div id="preloader"></div>
+
+  <script src="/static/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/assets/vendor/aos/aos.js"></script>
+  <script src="/static/assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="/static/assets/vendor/swiper/swiper-bundle.min.js"></script>
+  <script src="/static/assets/js/main.js"></script>
+  
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Mobile Toggle & Search Logic
+        const toggleBtn = document.getElementById('customMobileToggle');
+        const dropdown = document.getElementById('customMobileDropdown');
+        if (toggleBtn && dropdown) {
+            toggleBtn.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                dropdown.classList.toggle('active');
+                this.classList.toggle('bi-list'); this.classList.toggle('bi-x');
+            });
+            document.addEventListener('click', function(e) {
+                if (dropdown.classList.contains('active') && !dropdown.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    dropdown.classList.remove('active');
+                    toggleBtn.classList.remove('bi-x'); toggleBtn.classList.add('bi-list');
+                }
+            });
+        }
+        
+        const form = document.getElementById("searchForm");
+        const input = document.getElementById("searchInput");
+        if(form){
+            form.addEventListener("submit", function(e) {
+                e.preventDefault();
+                if (!form.classList.contains("expanded") || input.value.trim() === "") {
+                    form.classList.add("expanded"); input.focus(); return;
+                }
+                
+                let searchQuery = input.value.trim();
+                if(searchQuery) {
+                    // FIXED: Changed /search_query to /submit to match app.py
+                    fetch('/submit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ search: searchQuery })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.redirect) window.location.href = data.redirect;
+                        else alert(data.message || "Search failed");
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+            });
+            document.addEventListener("click", function(event) {
+                if (!form.contains(event.target) && input.value === "") form.classList.remove("expanded");
+            });
+        }
+    });
+
+    const recipeSlug = '{{ recipe.slug }}'; 
+    function likeRecipe() {
+        const likeButton = document.getElementById('like-button');
+        const heartIcon = likeButton.querySelector('i');
+        fetch('/like_recipe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({recipe_name: recipeSlug})
+        }).then(response => response.json()).then(data => {
+            if (data.status === 'success') {
+                if (data.liked) {
+                    heartIcon.classList.remove('far'); heartIcon.classList.add('fas'); heartIcon.style.color = 'red';
+                } else {
+                    heartIcon.classList.remove('fas'); heartIcon.classList.add('far'); heartIcon.style.color = '';
+                }
+                localStorage.setItem(`liked_${recipeSlug}`, data.liked);
+            }
+        });
+    }
+    
+    function restoreLikeState() {
+        const heartIcon = document.querySelector('#like-button i');
+        if (localStorage.getItem(`liked_${recipeSlug}`) === 'true') {
+            heartIcon.classList.remove('far'); heartIcon.classList.add('fas'); heartIcon.style.color = 'red';
+        }
+    }
+    window.onload = restoreLikeState;
+
+    // --- NEW DELETE COMMENT LOGIC ---
+    function deleteComment(commentId) {
+        if(!confirm("Are you sure you want to delete this comment?")) return;
+        
+        fetch(`/delete_comment/${commentId}`, {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                document.getElementById('comment-' + commentId).remove();
+            } else {
+                alert("Failed to delete comment.");
+            }
+        });
+    }
+
+    // Recommendation fetch
+    const box = document.getElementById("rec-content");
+    fetch(`/get_related_recipes/${recipeSlug}`)
+        .then(res => res.json())
+        .then(data => {
+            if(data && data.length > 0) {
+                const rec = data[0]; 
+                box.innerHTML = `
+                    <a href="${rec.url}" class="rec-item fade-in">
+                        <img src="${rec.image_url}" onerror="this.onerror=null; this.src='https://placehold.co/600x400?text=Recipe';">
+                        <div class="rec-name">${rec.name}</div>
+                    </a>`;
+            } else {
+                box.innerHTML = `<span style="font-size:0.8rem; color:#888;">No suggestions yet.</span>`;
+            }
+        })
+        .catch(err => console.error(err));
+  </script>
+</body>
+</html>

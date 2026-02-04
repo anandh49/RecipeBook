@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Liked Recipes</title>
+
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <link href="{{ url_for('static', filename='assets/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/aos/aos.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/glightbox/css/glightbox.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/swiper/swiper-bundle.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="{{ url_for('static', filename='assets/css/main.css') }}" rel="stylesheet">
+
+  <style>
+    /* HEADER & COMMON STYLES */
+    .header .container { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; padding-bottom: 10px; position: relative; }
+    .logo h1 { font-family: 'Amatic SC', sans-serif; font-size: 2.5rem; color: #37373f; margin: 0; }
+    .logo span { color: #ce1212; font-size: 2.5rem; }
+    .logo { text-decoration: none; display: flex; align-items: baseline; }
+    
+    #navmenu { margin-left: auto; margin-right: 20px; }
+    .header-right-group { display: flex; align-items: center; gap: 10px; position: relative; }
+
+    /* SEARCH BAR */
+    #searchForm { display: flex; align-items: center; border-radius: 50px; background: transparent; border: 2px solid transparent; transition: all 0.3s ease; overflow: hidden; position: relative; }
+    #searchForm.expanded { background-color: white; border: 2px solid #ce1212; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    #searchInput { width: 0; padding: 0; border: none; outline: none; background: transparent; transition: width 0.4s ease, padding 0.4s ease; font-size: 16px; opacity: 0; }
+    #searchForm.expanded #searchInput { width: 200px; padding: 5px 15px; opacity: 1; }
+    #searchBtn { background: transparent !important; color: #000; border: none; padding: 8px 12px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    #searchBtn:hover { color: #ce1212; }
+
+    .icon-trigger { color: #000; font-size: 22px; cursor: pointer; transition: color 0.3s; text-decoration: none; margin-left: 10px; }
+    .icon-trigger:hover { color: #ce1212; }
+
+    /* MOBILE DROPDOWN */
+    .mobile-dropdown-menu { display: none; position: absolute; top: 60px; right: 15px; width: 200px; background-color: white; box-shadow: 0 8px 16px rgba(0,0,0,0.2); border-radius: 8px; z-index: 99999; overflow: hidden; border: 1px solid #eee; }
+    .mobile-dropdown-menu.active { display: block; animation: fadeIn 0.3s ease; }
+    .mobile-dropdown-menu a { display: block; padding: 12px 20px; color: #333; text-decoration: none; font-weight: 500; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; }
+    .mobile-dropdown-menu a:last-child { border-bottom: none; }
+    .custom-toggle-btn { color: #000; font-size: 32px; cursor: pointer; z-index: 10000; margin-left: 5px; display: none; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* RECIPE CARDS */
+    .recipe-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 30px; }
+    .block-container { position: relative; width: 150px; height: 150px; perspective: 1000px; cursor: pointer; margin: 15px; }
+    
+    .btn-back { position: absolute; inset: 0; z-index: -1; border-radius: 20px; transform: rotate(5deg); transition: 0.3s; box-shadow: 5px 5px 15px rgba(0,0,0,0.15); width: 100%; height: 100%; }
+    
+    .btn-front { position: absolute; inset: 0; z-index: 1; border-radius: 20px; background: white; border: 1px solid #eee; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; overflow: hidden; padding: 0; width: 100%; height: 100%; }
+    
+    .block-container:hover .btn-front { transform: translateY(-5px); }
+    .block-container:hover .btn-back { transform: rotate(8deg) scale(1.02); }
+    
+    .recipe-image { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; }
+    .recipe-name { position: absolute; bottom: 0; width: 100%; background: rgba(255,255,255,0.9); text-align: center; font-family: 'Amatic SC', sans-serif; font-weight: bold; font-size: 1.4rem; padding: 5px 0; color: #333; }
+    .recipe-button { width: 100%; height: 100%; display: block; }
+    
+    .pagination { display: flex; justify-content: center; gap: 15px; margin-top: 40px; margin-bottom: 40px; }
+    .pagination button { padding: 8px 25px; background: #ce1212; color: white; border: none; border-radius: 50px; cursor: pointer; transition: 0.3s; font-weight: bold; }
+    .pagination button:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* RESPONSIVENESS */
+    @media (max-width: 1200px) { 
+        .header-right-group { margin-left: auto; gap: 15px; padding-right: 0; }
+        .logo h1, .logo span { font-size: 2rem; } 
+        
+        #searchForm { position: absolute; right: 45px; top: 50%; transform: translateY(-50%); z-index: 40; background: transparent; border: none; }
+        #searchForm.expanded { background-color: white; border: 2px solid #ce1212; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        #searchForm.expanded #searchInput { width: 120px; padding: 5px 10px; opacity: 1; }
+        
+        .custom-toggle-btn { display: block; }
+        #navmenu { display: none; }
+        
+        .recipe-container { gap: 15px; }
+        .block-container { width: 140px; height: 140px; margin: 10px; }
+    }
+  </style>
+</head>
+
+<body class="index-page">
+
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container">
+      <div class="brand-group">
+          <a href="{{ url_for('main') }}" class="logo">
+            <h1 class="sitename">RecipeBook</h1>
+            <span>.</span>
+          </a>
+      </div>
+
+      <nav id="navmenu" class="navmenu ms-auto d-none d-xl-block">
+        <ul>
+          <li><a href="{{ url_for('main') }}">Home</a></li>
+          <li> <a href="{{ url_for('show_page', slug='filtered_recipes') }}">Filter</a></li>
+          <li><a href="{{ url_for('show_page', slug='ingredients') }}">Ingredients</a></li>
+          <li><a href="{{ url_for('show_page', slug='category') }}">Veg/NonVeg</a></li>
+        </ul>
+      </nav>
+  
+      <div class="header-right-group">
+          <form id="searchForm">
+              <input type="text" id="searchInput" name="search" placeholder="Search...">
+              <button type="submit" id="searchBtn">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+              </button>
+          </form>
+          
+          <a href="{{ url_for('main') }}" class="icon-trigger d-none d-xl-flex" title="Return to Home">
+            <i class="fa-solid fa-arrow-left"></i>
+          </a>
+
+          <i id="customMobileToggle" class="custom-toggle-btn bi bi-list"></i>
+      </div>
+
+      <div id="customMobileDropdown" class="mobile-dropdown-menu">
+          <a href="{{ url_for('show_page', slug='filtered_recipes') }}">Filter Recipes</a>
+          <a href="{{ url_for('show_page', slug='ingredients') }}">Ingredients</a>
+          <a href="{{ url_for('show_page', slug='category') }}">Veg/NonVeg</a>
+          <div style="border-top: 1px solid #ddd; margin: 5px 0;"></div>
+          <a href="{{ url_for('main') }}" style="color:#ce1212; font-weight:bold;">Return Home</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section id="hero" class="hero section light-background">
+      <div class="container">
+        <div class="row gy-4 justify-content-center">
+          <div class="col-lg-12 text-center">
+            <h1 data-aos="fade-up">Your Liked Recipes</h1>
+            <p data-aos="fade-up" data-aos-delay="100">All the recipes you've loved in one place</p>
+            
+            <div class="recipe-container" id="recipeContainer"></div>
+    
+            <div class="pagination">
+                <button id="prevBtn" onclick="prevPage()" disabled>Prev</button>
+                <button id="nextBtn" onclick="nextPage()">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <i class="mobile-nav-toggle d-none"></i>
+
+  <script src="{{ url_for('static', filename='assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/vendor/aos/aos.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/js/main.js') }}"></script>
+
+  <script>
+    /* DROPDOWN LOGIC */
+    document.addEventListener("DOMContentLoaded", function() {
+        const toggleBtn = document.getElementById('customMobileToggle');
+        const dropdown = document.getElementById('customMobileDropdown');
+        if (toggleBtn && dropdown) {
+            toggleBtn.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                dropdown.classList.toggle('active');
+                this.classList.toggle('bi-list'); this.classList.toggle('bi-x');
+            });
+            document.addEventListener('click', function(e) {
+                if (dropdown.classList.contains('active') && !dropdown.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    dropdown.classList.remove('active');
+                    toggleBtn.classList.remove('bi-x'); toggleBtn.classList.add('bi-list');
+                }
+            });
+        }
+    });
+
+    /* SEARCH LOGIC */
+    const form = document.getElementById("searchForm");
+    const input = document.getElementById("searchInput");
+    if(form) {
+        form.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            if (!form.classList.contains("expanded") || input.value.trim() === "") {
+                form.classList.add("expanded"); input.focus(); return;
+            }
+            
+            const submitBtn = document.getElementById("searchBtn");
+            const originalIcon = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ search: input.value })
+                });
+
+                if (response.redirected) {
+                     window.location.href = response.url;
+                } else {
+                     const data = await response.json();
+                     if (data.redirect) window.location.href = data.redirect;
+                     else alert(data.message || "Recipe not found.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Search failed.");
+            } finally {
+                submitBtn.innerHTML = originalIcon;
+            }
+        });
+        document.addEventListener("click", function(e) {
+            if (!form.contains(e.target) && input.value === "") form.classList.remove("expanded");
+        });
+    }
+
+    /* PAGINATION */
+    let currentPage = 0;
+    const itemsPerPage = 6; 
+
+    // Fetched via Jinja2 from backend
+    const recipes = [
+        {% for recipe in liked_recipes %}
+            {
+                name: "{{ recipe.name }}",
+                url: "{{ recipe.url }}",
+                image: "{{ recipe.image }}",
+                defaultImage: "/static/images/default.jpg"
+            },
+        {% endfor %}
+    ];
+
+    const totalPages = Math.ceil(recipes.length / itemsPerPage);
+    const recipeContainer = document.getElementById("recipeContainer");
+
+    function showPage(page) {
+        recipeContainer.innerHTML = "";
+        const start = page * itemsPerPage;
+        const end = start + itemsPerPage;
+
+        if (recipes.length === 0) {
+            recipeContainer.innerHTML = '<p class="text-muted" style="font-size:1.2rem;">You haven\'t liked any recipes yet.</p>';
+            document.getElementById("prevBtn").style.display = 'none';
+            document.getElementById("nextBtn").style.display = 'none';
+            return;
+        }
+
+        recipes.slice(start, end).forEach(recipe => {
+            const el = document.createElement("div");
+            el.className = "block-container";
+            el.innerHTML = `
+                <div class="btn-back" style="background: linear-gradient(135deg, #4682eb -20%, #01beff 120%);"></div>
+                <div class="btn-front">
+                    <a href="${recipe.url}" class="recipe-button">
+                        <img src="${recipe.image}" onerror="this.onerror=null; this.src='${recipe.defaultImage}';" class="recipe-image">
+                        <div class="recipe-name">${recipe.name}</div>
+                    </a>
+                </div>`;
+            recipeContainer.appendChild(el);
+        });
+
+        document.getElementById("prevBtn").disabled = page === 0;
+        document.getElementById("nextBtn").disabled = page >= totalPages - 1;
+    }
+
+    function nextPage() { if (currentPage < totalPages - 1) { currentPage++; showPage(currentPage); } }
+    function prevPage() { if (currentPage > 0) { currentPage--; showPage(currentPage); } }
+    
+    showPage(currentPage);
+  </script>
+</body>
+</html>

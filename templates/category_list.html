@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>RecipeBook - {{ category_name }}</title>
+  
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Amatic+SC:wght@400;700&display=swap" rel="stylesheet">
+  
+  <link href="{{ url_for('static', filename='assets/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/aos/aos.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/glightbox/css/glightbox.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/swiper/swiper-bundle.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="{{ url_for('static', filename='assets/css/main.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+
+  <style>
+    /* ... (KEEP HEADER & HERO STYLES FROM PREVIOUS TURN) ... */
+    
+    /* Hero Styles omitted for brevity - reuse from previous category_list.html */
+    .hero-section { padding: 60px 0; margin-bottom: 20px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .hero-veg { background: linear-gradient(180deg, #e8f5e9 0%, #ffffff 100%); color: #2e7d32; }
+    .hero-nonveg { background: linear-gradient(180deg, #ffebee 0%, #ffffff 100%); color: #c62828; }
+    .hero-breakfast { background: linear-gradient(180deg, #fffde7 0%, #ffffff 100%); color: #f9a825; } 
+    .hero-lunch { background: linear-gradient(180deg, #fff3e0 0%, #ffffff 100%); color: #ef6c00; }     
+    .hero-dinner { background: linear-gradient(180deg, #e8eaf6 0%, #ffffff 100%); color: #3949ab; }    
+    .hero-dessert { background: linear-gradient(180deg, #fce4ec 0%, #ffffff 100%); color: #d81b60; }   
+    .hero-drinks { background: linear-gradient(180deg, #e0f7fa 0%, #ffffff 100%); color: #00838f; }    
+    .hero-default { background: linear-gradient(180deg, #f5f5f5 0%, #ffffff 100%); color: #616161; }
+    .cat-icon { font-size: 4rem; margin-bottom: 15px; display: inline-block; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+    .category-title { font-family: 'Amatic SC', cursive; font-size: 4rem; font-weight: 700; margin-bottom: 5px; text-transform: capitalize; }
+    .quote-text { font-family: 'Inter', sans-serif; font-style: italic; color: #555; font-size: 1.2rem; font-weight: 400; max-width: 600px; margin: 0 auto; }
+
+    /* Recipe Grid */
+    .recipe-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 20px; }
+    .recipe-wrapper { display: flex; flex-direction: column; align-items: center; width: 150px; }
+    .block-container { position: relative; width: 150px; height: 150px; perspective: 1000px; cursor: pointer; }
+    .btn-back { position: absolute; inset: 0; z-index: -1; border-radius: 20px; transform: rotate(5deg); transition: 0.3s; box-shadow: 5px 5px 15px rgba(0,0,0,0.15); }
+    .btn-front { position: absolute; inset: 0; z-index: 1; border-radius: 20px; background: white; border: 1px solid #eee; display: flex; align-items: center; justify-content: center; transition: 0.3s; overflow: hidden; padding: 0;}
+    .block-container:hover .btn-front { transform: translateY(-5px); }
+    .block-container:hover .btn-back { transform: rotate(8deg) scale(1.02); }
+    .recipe-image { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; }
+    
+    /* FIX: ALLOW TEXT WRAPPING */
+    .recipe-name { 
+        font-family: 'Amatic SC', sans-serif; 
+        font-weight: bold; 
+        color: #333; 
+        text-align: center; 
+        text-decoration: none;
+        
+        font-size: 1.2rem;       
+        padding: 4px 2px;        
+        line-height: 1.05;       
+        margin-top: 10px;
+        
+        /* Multi-line wrapping */
+        white-space: normal;     
+        display: -webkit-box;
+        -webkit-line-clamp: 2;   
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        max-width: 150px; /* Ensure it stays within width */
+    }
+    
+    .recipe-link { text-decoration: none; color: inherit; }
+    .pagination { display: flex; justify-content: center; gap: 15px; margin-top: 40px; margin-bottom: 80px;}
+    .pagination button { padding: 8px 25px; background: #ce1212; color: white; border: none; border-radius: 50px; cursor: pointer; transition: 0.3s; font-weight: bold; }
+    .pagination button:hover { background: #b30e0e; transform: translateY(-2px); }
+    .pagination button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+    .empty-state { text-align: center; color: #999; margin-top: 50px; }
+    .empty-state i { font-size: 3rem; margin-bottom: 10px; display: block; opacity: 0.5; }
+    /* Header (Universal) */
+    .header .container { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; padding-bottom: 10px; position: relative; }
+    .brand-group { display: flex; flex-direction: row; align-items: center; gap: 15px; z-index: 20; flex-shrink: 0; }
+    .logo { text-decoration: none; display: flex; align-items: baseline; }
+    .logo h1 { margin: 0; font-family: 'Amatic SC', sans-serif; font-size: 2.5rem; color: #37373f; line-height: 1; white-space: nowrap; }
+    .logo span { color: #ce1212; font-size: 2.5rem; font-family: 'Amatic SC', sans-serif; padding-left: 2px; }
+    #navmenu { margin-left: auto; margin-right: 20px; }
+    .header-right-group { display: flex; align-items: center; gap: 10px; position: relative; }
+    #searchForm { display: flex; align-items: center; border-radius: 50px; background: transparent; border: 2px solid transparent; transition: all 0.3s ease; overflow: hidden; position: relative; }
+    #searchForm.expanded { background-color: white; border: 2px solid #ce1212; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    #searchInput { width: 0; padding: 0; border: none; outline: none; background: transparent; transition: width 0.4s ease, padding 0.4s ease; font-size: 16px; opacity: 0; }
+    #searchForm.expanded #searchInput { width: 200px; padding: 5px 15px; opacity: 1; }
+    #searchBtn { background: transparent !important; color: #000; border: none; padding: 8px 12px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    .icon-trigger { color: #000; font-size: 22px; cursor: pointer; transition: color 0.3s; text-decoration: none; margin-left: 10px; }
+    .mobile-dropdown-menu { display: none; position: absolute; top: 60px; right: 15px; width: 200px; background-color: white; box-shadow: 0 8px 16px rgba(0,0,0,0.2); border-radius: 8px; z-index: 99999; overflow: hidden; border: 1px solid #eee; }
+    .mobile-dropdown-menu.active { display: block; animation: fadeIn 0.3s ease; }
+    .mobile-dropdown-menu a { display: block; padding: 12px 20px; color: #333; text-decoration: none; font-weight: 500; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; }
+    .mobile-dropdown-menu a:last-child { border-bottom: none; }
+    .mobile-dropdown-menu a:hover { background-color: #f8f9fa; color: #ce1212; }
+    .mobile-dropdown-menu a.home-link { font-weight: bold; color: #ce1212; }
+    .custom-toggle-btn { color: #000; font-size: 32px; cursor: pointer; z-index: 10000; margin-left: 5px; display: none; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 1200px) { 
+        .header-right-group { margin-left: auto; gap: 15px; padding-right: 0; }
+        .logo h1, .logo span { font-size: 2rem; } 
+        #searchForm { position: absolute; right: 45px; top: 50%; transform: translateY(-50%); z-index: 40; background: transparent; border: none; }
+        #searchForm.expanded { background-color: white; border: 2px solid #ce1212; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        #searchForm.expanded #searchInput { width: 120px; padding: 5px 10px; opacity: 1; }
+        .custom-toggle-btn { display: block; }
+        #navmenu { display: none; }
+    }
+  </style>
+</head>
+
+<body class="index-page">
+
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container">
+      <div class="brand-group">
+          <a href="{{ url_for('main') }}" class="logo">
+            <h1 class="sitename">RecipeBook</h1>
+            <span>.</span>
+          </a>
+      </div>
+
+      <nav id="navmenu" class="navmenu ms-auto d-none d-xl-block">
+        <ul>
+          <li><a href="{{ url_for('main') }}">Home</a></li>
+          <li><a href="{{ url_for('show_page', slug='ingredients') }}">Ingredients</a></li>
+          <li><a href="{{ url_for('show_page', slug='filtered_recipes') }}">Filter</a></li>
+          <li><a href="{{ url_for('liked_recipes') }}">Liked</a></li>
+        </ul>
+      </nav>
+  
+      <div class="header-right-group">
+          <form id="searchForm">
+              <input type="text" id="searchInput" name="search" placeholder="Search...">
+              <button type="submit" id="searchBtn">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+              </button>
+          </form>
+          
+          <a href="{{ url_for('main') }}" class="icon-trigger d-none d-xl-flex" title="Return to Home">
+            <i class="fa-solid fa-arrow-left"></i>
+          </a>
+
+          <i id="customMobileToggle" class="custom-toggle-btn bi bi-list"></i>
+      </div>
+
+      <div id="customMobileDropdown" class="mobile-dropdown-menu">
+          <a href="{{ url_for('show_page', slug='ingredients') }}">Ingredients</a>
+          <a href="{{ url_for('show_page', slug='filtered_recipes') }}">Filter Recipes</a>
+          <a href="{{ url_for('liked_recipes') }}">Liked Recipes</a>
+          <div style="border-top: 1px solid #ddd; margin: 5px 0;"></div>
+          <a href="{{ url_for('main') }}" class="home-link"><i class="bi bi-arrow-left"></i> Return Home</a>
+      </div>
+
+    </div>
+  </header>
+
+  <main class="main">
+    
+    <section class="hero-section 
+      {% if category_name == 'Vegetarian' %}hero-veg
+      {% elif category_name == 'Non-Vegetarian' %}hero-nonveg
+      {% elif category_name == 'Breakfast' %}hero-breakfast
+      {% elif category_name == 'Lunch' %}hero-lunch
+      {% elif category_name == 'Dinner' %}hero-dinner
+      {% elif category_name == 'Dessert' %}hero-dessert
+      {% elif category_name == 'Drinks' %}hero-drinks
+      {% else %}hero-default{% endif %}">
+      
+      <div class="container text-center">
+        
+        {% if category_name == 'Vegetarian' %}
+            <i class="cat-icon fa-solid fa-leaf" style="color: #46bb46;"></i>
+            <h1 class="category-title" style="color: #2e7d32;">Go Green, Eat Clean!</h1>
+            <p class="quote-text"><i class="fa-solid fa-quote-left"></i> Fresh ingredients, plant-based power, and pure deliciousness. <i class="fa-solid fa-quote-right"></i></p>
+        
+        {% elif category_name == 'Non-Vegetarian' %}
+            <i class="cat-icon fa-solid fa-drumstick-bite" style="color: #ce1212;"></i>
+            <h1 class="category-title" style="color: #c62828;">Savor the Flavor</h1>
+            <p class="quote-text"><i class="fa-solid fa-quote-left"></i> Hearty meats, rich flavors, and unforgettable feasts await. <i class="fa-solid fa-quote-right"></i></p>
+        
+        {% elif category_name == 'Breakfast' %}
+            <i class="cat-icon fa-solid fa-mug-hot" style="color: #f9a825;"></i>
+            <h1 class="category-title" style="color: #f57f17;">Rise & Shine</h1>
+            <p class="quote-text"><i class="fa-solid fa-quote-left"></i> Start your day with a plate full of energy and joy. <i class="fa-solid fa-quote-right"></i></p>
+
+        {% elif category_name == 'Lunch' %}
+            <i class="cat-icon fa-solid fa-burger" style="color: #ef6c00;"></i>
+            <h1 class="category-title" style="color: #e65100;">Midday Fuel</h1>
+            <p class="quote-text"><i class="fa-solid fa-quote-left"></i> Recharge your afternoon with a delicious, hearty meal. <i class="fa-solid fa-quote-right"></i></p>
+
+        {% elif category_name == 'Dinner' %}
+            <i class="cat-icon fa-solid fa-utensils" style="color: #3949ab;"></i>
+            <h1 class="category-title" style="color: #283593;">Evening Feast</h1>
+            <p class="quote-text"><i class="fa-solid fa-quote-left"></i> End the day perfectly with flavors that comfort the soul. <i class="fa-solid fa-quote-right"></i></p>
+
+        {% elif category_name == 'Dessert' %}
+            <i class="cat-icon fa-solid fa-ice-cream" style="color: #d81b60;"></i>
+            <h1 class="category-title" style="color: #c2185b;">Sweet Treats</h1>
+            <p class="quote-text"><i class="fa-solid fa-quote-left"></i> Life is short, make it sweet. Indulge in the magic of sugar. <i class="fa-solid fa-quote-right"></i></p>
+
+        {% elif category_name == 'Drinks' %}
+            <i class="cat-icon fa-solid fa-martini-glass-citrus" style="color: #00838f;"></i>
+            <h1 class="category-title" style="color: #006064;">Sip & Refresh</h1>
+            <p class="quote-text"><i class="fa-solid fa-quote-left"></i> Quench your thirst with our refreshing blends and brews. <i class="fa-solid fa-quote-right"></i></p>
+
+        {% else %}
+            <i class="cat-icon fa-solid fa-bowl-food" style="color: #616161;"></i>
+            <h1 class="category-title" style="color: #424242;">{{ category_name }} Menu</h1>
+            <p class="quote-text"><i class="fa-solid fa-quote-left"></i> Cooked with love, served with passion. <i class="fa-solid fa-quote-right"></i></p>
+        {% endif %}
+
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="recipe-container" id="recipeContainer"></div>
+
+        <div class="pagination">
+            <button id="prevBtn" onclick="prevPage()" disabled>Prev</button>
+            <button id="nextBtn" onclick="nextPage()">Next</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="{{ url_for('static', filename='assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/vendor/aos/aos.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/js/main.js') }}"></script>
+
+  <script>
+    /* =========================================
+       CUSTOM DROPDOWN & SEARCH
+       ========================================= */
+    document.addEventListener("DOMContentLoaded", function() {
+        const toggleBtn = document.getElementById('customMobileToggle');
+        const dropdown = document.getElementById('customMobileDropdown');
+        if (toggleBtn && dropdown) {
+            toggleBtn.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                dropdown.classList.toggle('active');
+                this.classList.toggle('bi-list'); this.classList.toggle('bi-x');
+            });
+            document.addEventListener('click', function(e) {
+                if (dropdown.classList.contains('active') && !dropdown.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    dropdown.classList.remove('active');
+                    toggleBtn.classList.remove('bi-x'); toggleBtn.classList.add('bi-list');
+                }
+            });
+        }
+        
+        const form = document.getElementById("searchForm");
+        const input = document.getElementById("searchInput");
+        if(form){
+            form.addEventListener("submit", async function(e) {
+                e.preventDefault();
+                if (!form.classList.contains("expanded") || input.value.trim() === "") {
+                    form.classList.add("expanded"); input.focus(); return;
+                }
+                const submitBtn = document.getElementById("searchBtn");
+                const originalIcon = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                try {
+                    const response = await fetch('/submit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ search: input.value })
+                    });
+                    if (response.redirected) window.location.href = response.url;
+                    else {
+                        const data = await response.json();
+                        if (data.redirect) window.location.href = data.redirect;
+                        else alert(data.message || "Recipe not found.");
+                    }
+                } catch (err) { console.error(err); } 
+                finally { submitBtn.innerHTML = originalIcon; }
+            });
+            document.addEventListener("click", function(e) {
+                if (!form.contains(e.target) && input.value === "") form.classList.remove("expanded");
+            });
+        }
+    });
+
+    /* =========================================
+       PAGINATION & RENDER LOGIC
+       ========================================= */
+    let currentPage = 0;
+    // UPDATED: Changed items per page from 6 to 3 as requested
+    const itemsPerPage = 3; 
+    
+    // SERVER SIDE DATA INJECTION INTO JS
+    const recipes = [
+        {% for recipe in recipes %} 
+            {
+                name: "{{ recipe.title }}",
+                url: "{{ url_for('show_page', slug=recipe.slug) }}",
+                image: "{{ recipe.image_url }}",
+                defaultImage: "/static/images/default.jpg"
+            },
+        {% endfor %}
+    ];
+
+    const totalPages = Math.ceil(recipes.length / itemsPerPage);
+    const recipeContainer = document.getElementById("recipeContainer");
+
+    function showPage(page) {
+        if(!recipeContainer) return;
+        recipeContainer.innerHTML = "";
+        const start = page * itemsPerPage;
+        const end = start + itemsPerPage;
+
+        recipes.slice(start, end).forEach(recipe => {
+            const recipeElement = document.createElement("div");
+            recipeElement.className = "recipe-wrapper"; 
+            
+            // Dynamic card back color based on category
+            const category = "{{ category_name }}";
+            let gradient = "linear-gradient(135deg, #4682eb, #01beff)"; // Default Blue
+            
+            if (category === 'Vegetarian') gradient = "linear-gradient(135deg, #46bb46, #28a745)";
+            else if (category === 'Non-Vegetarian') gradient = "linear-gradient(135deg, #ce1212, #ff4d4d)";
+            else if (category === 'Breakfast') gradient = "linear-gradient(135deg, #fbc02d, #f9a825)";
+            else if (category === 'Lunch') gradient = "linear-gradient(135deg, #ff9800, #ef6c00)";
+            else if (category === 'Dinner') gradient = "linear-gradient(135deg, #5c6bc0, #3949ab)";
+            else if (category === 'Dessert') gradient = "linear-gradient(135deg, #ec407a, #d81b60)";
+            else if (category === 'Drinks') gradient = "linear-gradient(135deg, #26c6da, #0097a7)";
+
+            recipeElement.innerHTML = `
+                <a href="${recipe.url}" class="recipe-link">
+                    <div class="block-container">
+                        <div class="btn-back" style="background: ${gradient};"></div>
+                        <div class="btn-front">
+                            <img src="${recipe.image}" 
+                                 onerror="this.onerror=null; this.src='${recipe.defaultImage}';" 
+                                 class="recipe-image">
+                        </div>
+                    </div>
+                    <div class="recipe-name">${recipe.name}</div>
+                </a>
+            `;
+            recipeContainer.appendChild(recipeElement);
+        });
+
+        const prev = document.getElementById("prevBtn");
+        const next = document.getElementById("nextBtn");
+        if(prev) {
+            prev.disabled = page === 0;
+            if(recipes.length === 0) prev.style.display = 'none';
+        }
+        if(next) {
+            next.disabled = page >= totalPages - 1;
+            if(recipes.length === 0) next.style.display = 'none';
+        }
+    }
+    
+    function nextPage() { if (currentPage < totalPages - 1) { currentPage++; showPage(currentPage); } }
+    function prevPage() { if (currentPage > 0) { currentPage--; showPage(currentPage); } }
+    
+    if(recipes.length > 0) {
+        showPage(currentPage);
+    } else if (recipeContainer) {
+        recipeContainer.innerHTML = `
+            <div class="empty-state">
+                <i class="fa-regular fa-folder-open"></i>
+                <p style="font-size:1.5rem; font-family:'Amatic SC';">Oops! No delicious recipes found here yet.</p>
+            </div>`;
+        document.getElementById("prevBtn").style.display = 'none';
+        document.getElementById("nextBtn").style.display = 'none';
+    }
+  </script>
+</body>
+</html>

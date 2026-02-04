@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Select Ingredients</title>
+
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Amatic+SC:wght@400;700&display=swap" rel="stylesheet">
+  
+  <link href="{{ url_for('static', filename='assets/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/aos/aos.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/glightbox/css/glightbox.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/swiper/swiper-bundle.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="{{ url_for('static', filename='assets/css/main.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+  
+  <style>
+    /* === HEADER & DROPDOWN STYLES === */
+    .header .container { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; padding-bottom: 10px; position: relative; }
+    .brand-group { display: flex; flex-direction: row; align-items: center; gap: 15px; z-index: 20; flex-shrink: 0; }
+    .logo { text-decoration: none; display: flex; align-items: baseline; }
+    .logo h1 { margin: 0; font-family: 'Amatic SC', sans-serif; font-size: 2.5rem; color: #37373f; line-height: 1; white-space: nowrap; }
+    .logo span { color: #ce1212; font-size: 2.5rem; font-family: 'Amatic SC', sans-serif; padding-left: 2px; }
+    
+    #navmenu { margin-left: auto; margin-right: 20px; }
+    .header-right-group { display: flex; align-items: center; gap: 10px; position: relative; }
+
+    #searchForm { display: flex; align-items: center; border-radius: 50px; background: transparent; border: 2px solid transparent; transition: all 0.3s ease; overflow: hidden; position: relative; }
+    #searchForm.expanded { background-color: white; border: 2px solid #ce1212; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    #searchInput { width: 0; padding: 0; border: none; outline: none; background: transparent; transition: width 0.4s ease, padding 0.4s ease; font-size: 16px; opacity: 0; }
+    #searchForm.expanded #searchInput { width: 200px; padding: 5px 15px; opacity: 1; }
+    #searchBtn { background: transparent !important; color: #000; border: none; padding: 8px 12px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    #searchBtn:hover { color: #ce1212; }
+
+    .icon-trigger { color: #000; font-size: 22px; cursor: pointer; transition: color 0.3s; text-decoration: none; margin-left: 10px; }
+    .icon-trigger:hover { color: #ce1212; }
+
+    /* Custom Mobile Dropdown */
+    .mobile-dropdown-menu { display: none; position: absolute; top: 60px; right: 15px; width: 200px; background-color: white; box-shadow: 0 8px 16px rgba(0,0,0,0.2); border-radius: 8px; z-index: 99999; overflow: hidden; border: 1px solid #eee; }
+    .mobile-dropdown-menu.active { display: block; animation: fadeIn 0.3s ease; }
+    .mobile-dropdown-menu a { display: block; padding: 12px 20px; color: #333; text-decoration: none; font-weight: 500; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; }
+    .mobile-dropdown-menu a:last-child { border-bottom: none; }
+    .mobile-dropdown-menu a:hover { background-color: #f8f9fa; color: #ce1212; }
+    .mobile-dropdown-menu a.home-link { font-weight: bold; color: #ce1212; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .custom-toggle-btn { color: #000; font-size: 32px; cursor: pointer; z-index: 10000; margin-left: 5px; display: none; }
+
+    @media (max-width: 1200px) { 
+        .header-right-group { margin-left: auto; gap: 15px; padding-right: 0; }
+        .brand-group { flex-direction: column; align-items: flex-start; gap: 0; margin-right: 0; }
+        .logo h1, .logo span { font-size: 2rem; } 
+        #searchForm { position: absolute; right: 45px; top: 50%; transform: translateY(-50%); z-index: 40; background: transparent; border: none; }
+        #searchForm.expanded { background-color: white; border: 2px solid #ce1212; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        #searchForm.expanded #searchInput { width: 120px; padding: 5px 10px; opacity: 1; }
+        .custom-toggle-btn { display: block; }
+        #navmenu { display: none; } 
+    }
+
+    /* === INGREDIENTS PAGE STYLES === */
+    .ingredients-section { padding: 40px 0; padding-bottom: 120px; }
+    .category-title { margin: 30px 0 20px; padding-bottom: 10px; border-bottom: 2px solid #4682eb; color: #4682eb; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    
+    .show-more-btn { display: block; margin: 15px auto; padding: 10px 25px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 20px; color: #555; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+    .show-more-btn:hover { background-color: #e9ecef; color: #4682eb; border-color: #4682eb; }
+
+    .ingredients-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; }
+    
+    .checkbox { display: none; }
+    .box-label { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; border-radius: 12px; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.2s ease; height: 100%; min-height: 120px; border: 1px solid #eee; }
+    .box-label:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); border-color: #4682eb; }
+    
+    .box-label img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 10px; transition: all 0.3s ease; }
+    .image-name { text-align: center; font-weight: 600; color: #555; font-size: 0.85rem; line-height: 1.2; }
+    
+    .checkbox:checked + .box-label { background: linear-gradient(135deg, #4682eb 0%, #01beff 100%); border-color: transparent; }
+    .checkbox:checked + .box-label .image-name { color: white; }
+    .checkbox:checked + .box-label img { transform: scale(1.1); filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2)); }
+      
+    .submit-btn { position: fixed; right: 30px; bottom: 90px; padding: 15px 35px; background: linear-gradient(135deg, #ce1212 0%, #ff4d4d 100%); color: white; border: none; border-radius: 50px; font-size: 18px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 5px 20px rgba(206, 18, 18, 0.4); z-index: 1000; } 
+    .submit-btn:hover { transform: translateY(-3px) scale(1.05); }
+    
+    /* RESULT CARD STYLES (UPDATED TO MATCH BREAKFAST.HTML) */
+    .results-section { display: none; margin-top: 20px; padding: 20px 0; background: transparent; }
+    .results-section h2 { font-size: 2.2rem; margin-bottom: 10px; color: #4682eb; text-align: center; font-weight: bolder; }
+    
+    .recipe-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 30px; }
+    .recipe-wrapper { display: flex; flex-direction: column; align-items: center; width: 150px; }
+    .block-container { position: relative; width: 150px; height: 150px; perspective: 1000px; cursor: pointer; }
+    
+    .btn-back { position: absolute; inset: 0; z-index: -1; border-radius: 20px; transform: rotate(5deg); transition: 0.3s; box-shadow: 5px 5px 15px rgba(0,0,0,0.15); width: 100%; height: 100%; background: linear-gradient(135deg, #4682eb -20%, #01beff 120%); }
+    .btn-front { position: absolute; inset: 0; z-index: 1; border-radius: 20px; background: white; border: 1px solid #eee; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; overflow: hidden; padding: 0; width: 100%; height: 100%; }
+    
+    .block-container:hover .btn-front { transform: translateY(-5px); }
+    .block-container:hover .btn-back { transform: rotate(8deg) scale(1.02); }
+    
+    .recipe-image { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; }
+    
+    .recipe-name { 
+        font-family: 'Amatic SC', sans-serif; 
+        font-size: 1.6rem; 
+        font-weight: bold; 
+        color: #333; 
+        text-align: center; 
+        line-height: 1.1; 
+        margin-top: 12px; 
+        text-decoration: none;
+    }
+    .recipe-link { text-decoration: none; color: inherit; }
+    .recipe-link:hover .recipe-name { color: #ce1212; }
+
+    .pagination { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
+    .pagination button { padding: 8px 20px; background: #4682eb; color: white; border: none; border-radius: 5px; }
+    .pagination button:disabled { background: #ccc; }
+    
+    #searchMessage { 
+        text-align: center; 
+        font-family: 'Amatic SC', cursive; 
+        font-size: 1.8rem; 
+        font-weight: 700;
+        margin-bottom: 25px; 
+        padding: 10px; 
+        background-color: transparent; 
+        color: #555;
+        display: none; 
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    #searchMessage i { color: #ce1212; margin-right: 5px; }
+
+    .hero.section { position: relative; padding-bottom: 20px; }
+  </style>
+</head>
+
+<body class="index-page">
+
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container">
+      <div class="brand-group">
+          <a href="{{ url_for('main') }}" class="logo">
+            <h1 class="sitename">RecipeBook</h1>
+            <span>.</span>
+          </a>
+      </div>
+
+      <nav id="navmenu" class="navmenu ms-auto d-none d-xl-block">
+        <ul>
+          <li><a href="{{ url_for('main') }}">Home</a></li>
+          <li> <a href="{{ url_for('show_page', slug='filtered_recipes') }}">Nutrition Filter</a></li>
+          <li> <a href="{{ url_for('show_category', category_name='Veg') }}">Veg/NonVeg</a></li>
+          <li><a href="{{ url_for('liked_recipes') }}">Liked</a></li>
+        </ul>
+      </nav>
+  
+      <div class="header-right-group">
+          <form id="searchForm">
+              <input type="text" id="searchInput" name="search" placeholder="Search...">
+              <button type="submit" id="searchBtn">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+              </button>
+          </form>
+          
+          <a href="{{ url_for('main') }}" class="icon-trigger d-none d-xl-flex" title="Return to Home">
+            <i class="fa-solid fa-arrow-left"></i>
+          </a>
+
+          <i id="customMobileToggle" class="custom-toggle-btn bi bi-list"></i>
+      </div>
+
+      <div id="customMobileDropdown" class="mobile-dropdown-menu">
+          <a href="{{ url_for('show_page', slug='filtered_recipes') }}">Nutrition Filter</a>
+          <a href="{{ url_for('show_category', category_name='Veg') }}">Veg/NonVeg</a>
+          <a href="{{ url_for('liked_recipes') }}">Liked Recipes</a>
+          <div style="border-top: 1px solid #ddd; margin: 5px 0;"></div>
+          <a href="{{ url_for('main') }}" class="home-link"><i class="bi bi-arrow-left"></i> Return Home</a>
+      </div>
+
+    </div>
+  </header>
+
+  <main class="main">
+    
+    <section id="hero" class="hero section light-background">
+        <div class="container">
+          <div class="row gy-4 justify-content-center justify-content-lg-between">
+            <div class="col-lg-12 order-2 order-lg-1 d-flex flex-column justify-content-center text-center">
+              <h1 data-aos="fade-up" style="font-family: 'Amatic SC', cursive; font-size: 3.5rem;">
+                <i class="fa-solid fa-basket-shopping" style="color:#ce1212;"></i> 
+                Select Your Ingredients 
+                <i class="fa-solid fa-carrot" style="color:#4682eb;"></i>
+              </h1>
+              <p data-aos="fade-up" data-aos-delay="100">
+                <i class="fa-solid fa-filter" style="color:#666;"></i> Choose what you have, and we'll show you what to cook!
+              </p>
+            </div>
+          </div>
+        </div>
+    </section>
+  
+    <section id="results" class="results-section">
+        <div class="container">
+        <h2 data-aos="fade-up">Matching Recipes</h2>
+        
+        <div id="searchMessage" data-aos="fade-up"></div>
+
+        <div class="recipe-container" id="recipeContainer"></div>
+        <div class="pagination">
+            <button id="prevBtn" onclick="prevPage()" disabled>Prev</button>
+            <button id="nextBtn" onclick="nextPage()">Next</button>
+        </div>
+        </div>
+    </section>
+
+    <section class="ingredients-section">
+      <div class="container">
+        <form id="ingredientsForm">
+          
+          <!-- CATEGORY 1: VEGETABLES -->
+          <h3 class="category-title" data-aos="fade-up"><i class="fa-solid fa-leaf"></i> Vegetables</h3>
+          <div class="ingredients-grid" data-aos="fade-up">
+            <div class="container p-0"><input type="checkbox" id="onion" class="checkbox" name="ingredients" value="onion"><label for="onion" class="box-label"><span class="image-name">Onion</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="garlic" class="checkbox" name="ingredients" value="garlic"><label for="garlic" class="box-label"><span class="image-name">Garlic</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="tomato" class="checkbox" name="ingredients" value="tomato"><label for="tomato" class="box-label"><span class="image-name">Tomato</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="potato" class="checkbox" name="ingredients" value="potato"><label for="potato" class="box-label"><span class="image-name">Potato</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="carrot" class="checkbox" name="ingredients" value="carrot"><label for="carrot" class="box-label"><span class="image-name">Carrot</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="pepper" class="checkbox" name="ingredients" value="red pepper"><label for="pepper" class="box-label"><span class="image-name">Red Pepper</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="corn" class="checkbox" name="ingredients" value="sweet corn"><label for="corn" class="box-label"><span class="image-name">Corn</span><img class="dynamic-img"></label></div>
+            
+            <!-- Hidden Vegetables -->
+            <div class="container p-0 more-vegetables" style="display:none;"><input type="checkbox" id="broccoli" class="checkbox" name="ingredients" value="broccoli"><label for="broccoli" class="box-label"><span class="image-name">Broccoli</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-vegetables" style="display:none;"><input type="checkbox" id="spinach" class="checkbox" name="ingredients" value="spinach"><label for="spinach" class="box-label"><span class="image-name">Spinach</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-vegetables" style="display:none;"><input type="checkbox" id="mushroom" class="checkbox" name="ingredients" value="mushroom"><label for="mushroom" class="box-label"><span class="image-name">Mushroom</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-vegetables" style="display:none;"><input type="checkbox" id="zucchini" class="checkbox" name="ingredients" value="zucchini"><label for="zucchini" class="box-label"><span class="image-name">Zucchini</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-vegetables" style="display:none;"><input type="checkbox" id="ginger" class="checkbox" name="ingredients" value="ginger"><label for="ginger" class="box-label"><span class="image-name">Ginger</span><img class="dynamic-img"></label></div>
+          </div>
+          <button type="button" class="show-more-btn" data-category="vegetables">+ Show More Vegetables</button>
+
+          <!-- CATEGORY 2: FRUITS -->
+          <h3 class="category-title" data-aos="fade-up"><i class="fa-solid fa-apple-whole"></i> Fruits</h3>
+          <div class="ingredients-grid" data-aos="fade-up">
+            <div class="container p-0"><input type="checkbox" id="lemon" class="checkbox" name="ingredients" value="lemon"><label for="lemon" class="box-label"><span class="image-name">Lemon</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="lime" class="checkbox" name="ingredients" value="lime"><label for="lime" class="box-label"><span class="image-name">Lime</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="apple" class="checkbox" name="ingredients" value="apple"><label for="apple" class="box-label"><span class="image-name">Apple</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="banana" class="checkbox" name="ingredients" value="banana"><label for="banana" class="box-label"><span class="image-name">Banana</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="grapes" class="checkbox" name="ingredients" value="raisins"><label for="grapes" class="box-label"><span class="image-name">Grapes</span><img class="dynamic-img"></label></div>
+            
+            <!-- Hidden Fruits -->
+            <div class="container p-0 more-fruits" style="display:none;"><input type="checkbox" id="strawberries" class="checkbox" name="ingredients" value="strawberries"><label for="strawberries" class="box-label"><span class="image-name">Strawberry</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-fruits" style="display:none;"><input type="checkbox" id="blueberries" class="checkbox" name="ingredients" value="blueberries"><label for="blueberries" class="box-label"><span class="image-name">Blueberry</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-fruits" style="display:none;"><input type="checkbox" id="pineapple" class="checkbox" name="ingredients" value="pineapple"><label for="pineapple" class="box-label"><span class="image-name">Pineapple</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-fruits" style="display:none;"><input type="checkbox" id="avocado" class="checkbox" name="ingredients" value="avocado"><label for="avocado" class="box-label"><span class="image-name">Avocado</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-fruits" style="display:none;"><input type="checkbox" id="mango" class="checkbox" name="ingredients" value="mango"><label for="mango" class="box-label"><span class="image-name">Mango</span><img class="dynamic-img"></label></div>
+          </div>
+          <button type="button" class="show-more-btn" data-category="fruits">+ Show More Fruits</button>
+
+          <!-- CATEGORY 3: MEAT & PROTEIN -->
+          <h3 class="category-title" data-aos="fade-up"><i class="fa-solid fa-drumstick-bite"></i> Meat & Protein</h3>
+          <div class="ingredients-grid" data-aos="fade-up">
+             <div class="container p-0"><input type="checkbox" id="chicken" class="checkbox" name="ingredients" value="chicken"><label for="chicken" class="box-label"><span class="image-name">Chicken</span><img class="dynamic-img"></label></div>
+             <div class="container p-0"><input type="checkbox" id="beef" class="checkbox" name="ingredients" value="beef"><label for="beef" class="box-label"><span class="image-name">Beef</span><img class="dynamic-img"></label></div>
+             <div class="container p-0"><input type="checkbox" id="pork" class="checkbox" name="ingredients" value="pork"><label for="pork" class="box-label"><span class="image-name">Pork</span><img class="dynamic-img"></label></div>
+             <div class="container p-0"><input type="checkbox" id="eggs" class="checkbox" name="ingredients" value="egg"><label for="eggs" class="box-label"><span class="image-name">Eggs</span><img class="dynamic-img"></label></div>
+             <div class="container p-0"><input type="checkbox" id="salmon" class="checkbox" name="ingredients" value="salmon"><label for="salmon" class="box-label"><span class="image-name">Salmon</span><img class="dynamic-img"></label></div>
+             
+             <!-- Hidden Meat -->
+             <div class="container p-0 more-meat" style="display:none;"><input type="checkbox" id="bacon" class="checkbox" name="ingredients" value="bacon"><label for="bacon" class="box-label"><span class="image-name">Bacon</span><img class="dynamic-img"></label></div>
+             <div class="container p-0 more-meat" style="display:none;"><input type="checkbox" id="sausages" class="checkbox" name="ingredients" value="sausages"><label for="sausages" class="box-label"><span class="image-name">Sausages</span><img class="dynamic-img"></label></div>
+             <div class="container p-0 more-meat" style="display:none;"><input type="checkbox" id="shrimp" class="checkbox" name="ingredients" value="shrimp"><label for="shrimp" class="box-label"><span class="image-name">Shrimp</span><img class="dynamic-img"></label></div>
+          </div>
+          <button type="button" class="show-more-btn" data-category="meat">+ Show More Meat</button>
+
+          <!-- CATEGORY 4: DAIRY -->
+          <h3 class="category-title" data-aos="fade-up"><i class="fa-solid fa-cow"></i> Dairy</h3>
+          <div class="ingredients-grid" data-aos="fade-up">
+            <div class="container p-0"><input type="checkbox" id="milk" class="checkbox" name="ingredients" value="milk"><label for="milk" class="box-label"><span class="image-name">Milk</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="butter" class="checkbox" name="ingredients" value="butter"><label for="butter" class="box-label"><span class="image-name">Butter</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="cheese" class="checkbox" name="ingredients" value="cheese"><label for="cheese" class="box-label"><span class="image-name">Cheese</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="yogurt" class="checkbox" name="ingredients" value="yogurt"><label for="yogurt" class="box-label"><span class="image-name">Yogurt</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="paneer" class="checkbox" name="ingredients" value="paneer"><label for="paneer" class="box-label"><span class="image-name">Paneer</span><img class="dynamic-img"></label></div>
+
+            <div class="container p-0 more-dairy" style="display:none;"><input type="checkbox" id="cream" class="checkbox" name="ingredients" value="cream"><label for="cream" class="box-label"><span class="image-name">Cream</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-dairy" style="display:none;"><input type="checkbox" id="ghee" class="checkbox" name="ingredients" value="ghee"><label for="ghee" class="box-label"><span class="image-name">Ghee</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-dairy" style="display:none;"><input type="checkbox" id="curd" class="checkbox" name="ingredients" value="curd"><label for="curd" class="box-label"><span class="image-name">Curd</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-dairy" style="display:none;"><input type="checkbox" id="mozzarella" class="checkbox" name="ingredients" value="mozzarella"><label for="mozzarella" class="box-label"><span class="image-name">Mozzarella</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-dairy" style="display:none;"><input type="checkbox" id="condensed_milk" class="checkbox" name="ingredients" value="condensed milk"><label for="condensed_milk" class="box-label"><span class="image-name">Cond. Milk</span><img class="dynamic-img"></label></div>
+          </div>
+          <button type="button" class="show-more-btn" data-category="dairy">+ Show More Dairy</button>
+
+          <!-- CATEGORY 5: GRAINS & FLOUR -->
+          <h3 class="category-title" data-aos="fade-up"><i class="fa-solid fa-wheat-awn"></i> Grains & Flour</h3>
+          <div class="ingredients-grid" data-aos="fade-up">
+            <div class="container p-0"><input type="checkbox" id="rice" class="checkbox" name="ingredients" value="rice"><label for="rice" class="box-label"><span class="image-name">Rice</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="flour" class="checkbox" name="ingredients" value="flour"><label for="flour" class="box-label"><span class="image-name">Flour</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="oats" class="checkbox" name="ingredients" value="oats"><label for="oats" class="box-label"><span class="image-name">Oats</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="pasta" class="checkbox" name="ingredients" value="pasta"><label for="pasta" class="box-label"><span class="image-name">Pasta</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="bread" class="checkbox" name="ingredients" value="bread"><label for="bread" class="box-label"><span class="image-name">Bread</span><img class="dynamic-img"></label></div>
+
+            <div class="container p-0 more-grains" style="display:none;"><input type="checkbox" id="quinoa" class="checkbox" name="ingredients" value="quinoa"><label for="quinoa" class="box-label"><span class="image-name">Quinoa</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-grains" style="display:none;"><input type="checkbox" id="semolina" class="checkbox" name="ingredients" value="semolina"><label for="semolina" class="box-label"><span class="image-name">Semolina</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-grains" style="display:none;"><input type="checkbox" id="cornflour" class="checkbox" name="ingredients" value="cornflour"><label for="cornflour" class="box-label"><span class="image-name">Cornflour</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-grains" style="display:none;"><input type="checkbox" id="noodles" class="checkbox" name="ingredients" value="noodles"><label for="noodles" class="box-label"><span class="image-name">Noodles</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-grains" style="display:none;"><input type="checkbox" id="maida" class="checkbox" name="ingredients" value="maida"><label for="maida" class="box-label"><span class="image-name">Maida</span><img class="dynamic-img"></label></div>
+          </div>
+          <button type="button" class="show-more-btn" data-category="grains">+ Show More Grains</button>
+
+          <!-- CATEGORY 6: SPICES -->
+          <h3 class="category-title" data-aos="fade-up"><i class="fa-solid fa-mortar-pestle"></i> Spices</h3>
+          <div class="ingredients-grid" data-aos="fade-up">
+            <div class="container p-0"><input type="checkbox" id="turmeric" class="checkbox" name="ingredients" value="turmeric"><label for="turmeric" class="box-label"><span class="image-name">Turmeric</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="cumin" class="checkbox" name="ingredients" value="cumin"><label for="cumin" class="box-label"><span class="image-name">Cumin</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="cinnamon" class="checkbox" name="ingredients" value="cinnamon"><label for="cinnamon" class="box-label"><span class="image-name">Cinnamon</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="cloves" class="checkbox" name="ingredients" value="cloves"><label for="cloves" class="box-label"><span class="image-name">Cloves</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="salt" class="checkbox" name="ingredients" value="salt"><label for="salt" class="box-label"><span class="image-name">Salt</span><img class="dynamic-img"></label></div>
+
+            <div class="container p-0 more-spices" style="display:none;"><input type="checkbox" id="pepper_spice" class="checkbox" name="ingredients" value="pepper"><label for="pepper_spice" class="box-label"><span class="image-name">Pepper</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-spices" style="display:none;"><input type="checkbox" id="chili_pow" class="checkbox" name="ingredients" value="chili powder"><label for="chili_pow" class="box-label"><span class="image-name">Chili Powder</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-spices" style="display:none;"><input type="checkbox" id="cardamom" class="checkbox" name="ingredients" value="cardamom"><label for="cardamom" class="box-label"><span class="image-name">Cardamom</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-spices" style="display:none;"><input type="checkbox" id="nutmeg" class="checkbox" name="ingredients" value="nutmeg"><label for="nutmeg" class="box-label"><span class="image-name">Nutmeg</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-spices" style="display:none;"><input type="checkbox" id="saffron" class="checkbox" name="ingredients" value="saffron"><label for="saffron" class="box-label"><span class="image-name">Saffron</span><img class="dynamic-img"></label></div>
+          </div>
+          <button type="button" class="show-more-btn" data-category="spices">+ Show More Spices</button>
+
+          <!-- CATEGORY 7: SEAFOOD -->
+          <h3 class="category-title" data-aos="fade-up"><i class="fa-solid fa-fish"></i> Seafood</h3>
+          <div class="ingredients-grid" data-aos="fade-up">
+            <div class="container p-0"><input type="checkbox" id="prawns" class="checkbox" name="ingredients" value="prawns"><label for="prawns" class="box-label"><span class="image-name">Prawns</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="tuna" class="checkbox" name="ingredients" value="tuna"><label for="tuna" class="box-label"><span class="image-name">Tuna</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="crab" class="checkbox" name="ingredients" value="crab"><label for="crab" class="box-label"><span class="image-name">Crab</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="mackerel" class="checkbox" name="ingredients" value="mackerel"><label for="mackerel" class="box-label"><span class="image-name">Mackerel</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="squid" class="checkbox" name="ingredients" value="squid"><label for="squid" class="box-label"><span class="image-name">Squid</span><img class="dynamic-img"></label></div>
+
+            <div class="container p-0 more-sea" style="display:none;"><input type="checkbox" id="lobster" class="checkbox" name="ingredients" value="lobster"><label for="lobster" class="box-label"><span class="image-name">Lobster</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-sea" style="display:none;"><input type="checkbox" id="sardines" class="checkbox" name="ingredients" value="sardines"><label for="sardines" class="box-label"><span class="image-name">Sardines</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-sea" style="display:none;"><input type="checkbox" id="cod" class="checkbox" name="ingredients" value="cod"><label for="cod" class="box-label"><span class="image-name">Cod</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-sea" style="display:none;"><input type="checkbox" id="oysters" class="checkbox" name="ingredients" value="oysters"><label for="oysters" class="box-label"><span class="image-name">Oysters</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-sea" style="display:none;"><input type="checkbox" id="mussels" class="checkbox" name="ingredients" value="mussels"><label for="mussels" class="box-label"><span class="image-name">Mussels</span><img class="dynamic-img"></label></div>
+          </div>
+          <button type="button" class="show-more-btn" data-category="sea">+ Show More Seafood</button>
+
+          <!-- CATEGORY 8: OILS & VINEGAR -->
+          <h3 class="category-title" data-aos="fade-up"><i class="fa-solid fa-droplet"></i> Oils & Vinegar</h3>
+          <div class="ingredients-grid" data-aos="fade-up">
+            <div class="container p-0"><input type="checkbox" id="olive_oil" class="checkbox" name="ingredients" value="olive oil"><label for="olive_oil" class="box-label"><span class="image-name">Olive Oil</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="coconut_oil" class="checkbox" name="ingredients" value="coconut oil"><label for="coconut_oil" class="box-label"><span class="image-name">Coconut Oil</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="sesame_oil" class="checkbox" name="ingredients" value="sesame oil"><label for="sesame_oil" class="box-label"><span class="image-name">Sesame Oil</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="vinegar" class="checkbox" name="ingredients" value="vinegar"><label for="vinegar" class="box-label"><span class="image-name">Vinegar</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="mustard_oil" class="checkbox" name="ingredients" value="mustard oil"><label for="mustard_oil" class="box-label"><span class="image-name">Mustard Oil</span><img class="dynamic-img"></label></div>
+
+            <div class="container p-0 more-oils" style="display:none;"><input type="checkbox" id="sunflower_oil" class="checkbox" name="ingredients" value="sunflower oil"><label for="sunflower_oil" class="box-label"><span class="image-name">Sunfl. Oil</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-oils" style="display:none;"><input type="checkbox" id="balsamic" class="checkbox" name="ingredients" value="balsamic vinegar"><label for="balsamic" class="box-label"><span class="image-name">Balsamic</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-oils" style="display:none;"><input type="checkbox" id="canola" class="checkbox" name="ingredients" value="canola oil"><label for="canola" class="box-label"><span class="image-name">Canola Oil</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-oils" style="display:none;"><input type="checkbox" id="rice_vinegar" class="checkbox" name="ingredients" value="rice vinegar"><label for="rice_vinegar" class="box-label"><span class="image-name">Rice Vin.</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-oils" style="display:none;"><input type="checkbox" id="apple_cider" class="checkbox" name="ingredients" value="apple cider vinegar"><label for="apple_cider" class="box-label"><span class="image-name">Apple Cider</span><img class="dynamic-img"></label></div>
+          </div>
+          <button type="button" class="show-more-btn" data-category="oils">+ Show More Oils</button>
+
+          <!-- CATEGORY 9: SWEETENERS & BAKING -->
+          <h3 class="category-title" data-aos="fade-up"><i class="fa-solid fa-candy-cane"></i> Sweets & Baking</h3>
+          <div class="ingredients-grid" data-aos="fade-up">
+            <div class="container p-0"><input type="checkbox" id="sugar" class="checkbox" name="ingredients" value="sugar"><label for="sugar" class="box-label"><span class="image-name">Sugar</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="honey" class="checkbox" name="ingredients" value="honey"><label for="honey" class="box-label"><span class="image-name">Honey</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="chocolate" class="checkbox" name="ingredients" value="chocolate"><label for="chocolate" class="box-label"><span class="image-name">Chocolate</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="vanilla" class="checkbox" name="ingredients" value="vanilla"><label for="vanilla" class="box-label"><span class="image-name">Vanilla</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="cocoa" class="checkbox" name="ingredients" value="cocoa"><label for="cocoa" class="box-label"><span class="image-name">Cocoa</span><img class="dynamic-img"></label></div>
+
+            <div class="container p-0 more-sweets" style="display:none;"><input type="checkbox" id="maple_syrup" class="checkbox" name="ingredients" value="maple syrup"><label for="maple_syrup" class="box-label"><span class="image-name">Maple Syrup</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-sweets" style="display:none;"><input type="checkbox" id="brown_sugar" class="checkbox" name="ingredients" value="brown sugar"><label for="brown_sugar" class="box-label"><span class="image-name">Brown Sugar</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-sweets" style="display:none;"><input type="checkbox" id="yeast" class="checkbox" name="ingredients" value="yeast"><label for="yeast" class="box-label"><span class="image-name">Yeast</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-sweets" style="display:none;"><input type="checkbox" id="baking_pow" class="checkbox" name="ingredients" value="baking powder"><label for="baking_pow" class="box-label"><span class="image-name">Baking Pow.</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-sweets" style="display:none;"><input type="checkbox" id="jaggery" class="checkbox" name="ingredients" value="jaggery"><label for="jaggery" class="box-label"><span class="image-name">Jaggery</span><img class="dynamic-img"></label></div>
+          </div>
+          <button type="button" class="show-more-btn" data-category="sweets">+ Show More Sweets</button>
+
+          <!-- CATEGORY 10: LEGUMES & BEANS -->
+          <h3 class="category-title" data-aos="fade-up"><i class="fa-solid fa-seedling"></i> Legumes & Beans</h3>
+          <div class="ingredients-grid" data-aos="fade-up">
+            <div class="container p-0"><input type="checkbox" id="chickpeas" class="checkbox" name="ingredients" value="chickpeas"><label for="chickpeas" class="box-label"><span class="image-name">Chickpeas</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="lentils" class="checkbox" name="ingredients" value="lentils"><label for="lentils" class="box-label"><span class="image-name">Lentils</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="kidney_beans" class="checkbox" name="ingredients" value="kidney beans"><label for="kidney_beans" class="box-label"><span class="image-name">Kidney Beans</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="peas_leg" class="checkbox" name="ingredients" value="peas"><label for="peas_leg" class="box-label"><span class="image-name">Peas</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="black_beans" class="checkbox" name="ingredients" value="black beans"><label for="black_beans" class="box-label"><span class="image-name">Black Beans</span><img class="dynamic-img"></label></div>
+
+            <div class="container p-0 more-legumes" style="display:none;"><input type="checkbox" id="soybeans" class="checkbox" name="ingredients" value="soybeans"><label for="soybeans" class="box-label"><span class="image-name">Soybeans</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-legumes" style="display:none;"><input type="checkbox" id="green_beans" class="checkbox" name="ingredients" value="green beans"><label for="green_beans" class="box-label"><span class="image-name">Green Beans</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-legumes" style="display:none;"><input type="checkbox" id="moong_dal" class="checkbox" name="ingredients" value="moong dal"><label for="moong_dal" class="box-label"><span class="image-name">Moong Dal</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-legumes" style="display:none;"><input type="checkbox" id="tofu" class="checkbox" name="ingredients" value="tofu"><label for="tofu" class="box-label"><span class="image-name">Tofu</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-legumes" style="display:none;"><input type="checkbox" id="baked_beans" class="checkbox" name="ingredients" value="baked beans"><label for="baked_beans" class="box-label"><span class="image-name">Baked Beans</span><img class="dynamic-img"></label></div>
+          </div>
+          <button type="button" class="show-more-btn" data-category="legumes">+ Show More Legumes</button>
+
+          <!-- CATEGORY 11: NUTS & SEEDS -->
+          <h3 class="category-title" data-aos="fade-up"><i class="fa-solid fa-tree"></i> Nuts & Seeds</h3>
+          <div class="ingredients-grid" data-aos="fade-up">
+            <div class="container p-0"><input type="checkbox" id="almonds" class="checkbox" name="ingredients" value="almonds"><label for="almonds" class="box-label"><span class="image-name">Almonds</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="cashews" class="checkbox" name="ingredients" value="cashews"><label for="cashews" class="box-label"><span class="image-name">Cashews</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="walnuts" class="checkbox" name="ingredients" value="walnuts"><label for="walnuts" class="box-label"><span class="image-name">Walnuts</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="peanuts" class="checkbox" name="ingredients" value="peanuts"><label for="peanuts" class="box-label"><span class="image-name">Peanuts</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="sesame" class="checkbox" name="ingredients" value="sesame seeds"><label for="sesame" class="box-label"><span class="image-name">Sesame</span><img class="dynamic-img"></label></div>
+
+            <div class="container p-0 more-nuts" style="display:none;"><input type="checkbox" id="chia" class="checkbox" name="ingredients" value="chia seeds"><label for="chia" class="box-label"><span class="image-name">Chia Seeds</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-nuts" style="display:none;"><input type="checkbox" id="pistachios" class="checkbox" name="ingredients" value="pistachios"><label for="pistachios" class="box-label"><span class="image-name">Pistachios</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-nuts" style="display:none;"><input type="checkbox" id="pumpkin_seeds" class="checkbox" name="ingredients" value="pumpkin seeds"><label for="pumpkin_seeds" class="box-label"><span class="image-name">Pumpkin Seeds</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-nuts" style="display:none;"><input type="checkbox" id="hazelnuts" class="checkbox" name="ingredients" value="hazelnuts"><label for="hazelnuts" class="box-label"><span class="image-name">Hazelnuts</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-nuts" style="display:none;"><input type="checkbox" id="pecans" class="checkbox" name="ingredients" value="pecans"><label for="pecans" class="box-label"><span class="image-name">Pecans</span><img class="dynamic-img"></label></div>
+          </div>
+          <button type="button" class="show-more-btn" data-category="nuts">+ Show More Nuts</button>
+
+          <!-- CATEGORY 12: FRESH HERBS -->
+          <h3 class="category-title" data-aos="fade-up"><i class="fa-solid fa-leaf"></i> Fresh Herbs</h3>
+          <div class="ingredients-grid" data-aos="fade-up">
+            <div class="container p-0"><input type="checkbox" id="mint" class="checkbox" name="ingredients" value="mint"><label for="mint" class="box-label"><span class="image-name">Mint</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="coriander" class="checkbox" name="ingredients" value="coriander"><label for="coriander" class="box-label"><span class="image-name">Coriander</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="basil" class="checkbox" name="ingredients" value="basil"><label for="basil" class="box-label"><span class="image-name">Basil</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="parsley" class="checkbox" name="ingredients" value="parsley"><label for="parsley" class="box-label"><span class="image-name">Parsley</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="rosemary" class="checkbox" name="ingredients" value="rosemary"><label for="rosemary" class="box-label"><span class="image-name">Rosemary</span><img class="dynamic-img"></label></div>
+
+            <div class="container p-0 more-herbs" style="display:none;"><input type="checkbox" id="thyme" class="checkbox" name="ingredients" value="thyme"><label for="thyme" class="box-label"><span class="image-name">Thyme</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-herbs" style="display:none;"><input type="checkbox" id="oregano" class="checkbox" name="ingredients" value="oregano"><label for="oregano" class="box-label"><span class="image-name">Oregano</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-herbs" style="display:none;"><input type="checkbox" id="dill" class="checkbox" name="ingredients" value="dill"><label for="dill" class="box-label"><span class="image-name">Dill</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-herbs" style="display:none;"><input type="checkbox" id="curry_leaves" class="checkbox" name="ingredients" value="curry leaves"><label for="curry_leaves" class="box-label"><span class="image-name">Curry Leaves</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-herbs" style="display:none;"><input type="checkbox" id="sage" class="checkbox" name="ingredients" value="sage"><label for="sage" class="box-label"><span class="image-name">Sage</span><img class="dynamic-img"></label></div>
+          </div>
+          <button type="button" class="show-more-btn" data-category="herbs">+ Show More Herbs</button>
+
+          <!-- CATEGORY 13: SAUCES & CONDIMENTS -->
+          <h3 class="category-title" data-aos="fade-up"><i class="fa-solid fa-bottle-droplet"></i> Sauces & Condiments</h3>
+          <div class="ingredients-grid" data-aos="fade-up">
+            <div class="container p-0"><input type="checkbox" id="soy_sauce" class="checkbox" name="ingredients" value="soy sauce"><label for="soy_sauce" class="box-label"><span class="image-name">Soy Sauce</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="ketchup" class="checkbox" name="ingredients" value="ketchup"><label for="ketchup" class="box-label"><span class="image-name">Ketchup</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="mayonnaise" class="checkbox" name="ingredients" value="mayonnaise"><label for="mayonnaise" class="box-label"><span class="image-name">Mayonnaise</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="mustard" class="checkbox" name="ingredients" value="mustard"><label for="mustard" class="box-label"><span class="image-name">Mustard</span><img class="dynamic-img"></label></div>
+            <div class="container p-0"><input type="checkbox" id="hot_sauce" class="checkbox" name="ingredients" value="hot sauce"><label for="hot_sauce" class="box-label"><span class="image-name">Hot Sauce</span><img class="dynamic-img"></label></div>
+
+            <div class="container p-0 more-condiments" style="display:none;"><input type="checkbox" id="bbq_sauce" class="checkbox" name="ingredients" value="bbq sauce"><label for="bbq_sauce" class="box-label"><span class="image-name">BBQ Sauce</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-condiments" style="display:none;"><input type="checkbox" id="pesto" class="checkbox" name="ingredients" value="pesto"><label for="pesto" class="box-label"><span class="image-name">Pesto</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-condiments" style="display:none;"><input type="checkbox" id="hummus" class="checkbox" name="ingredients" value="hummus"><label for="hummus" class="box-label"><span class="image-name">Hummus</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-condiments" style="display:none;"><input type="checkbox" id="peanut_butter" class="checkbox" name="ingredients" value="peanut butter"><label for="peanut_butter" class="box-label"><span class="image-name">Peanut Butter</span><img class="dynamic-img"></label></div>
+            <div class="container p-0 more-condiments" style="display:none;"><input type="checkbox" id="jam" class="checkbox" name="ingredients" value="jam"><label for="jam" class="box-label"><span class="image-name">Jam</span><img class="dynamic-img"></label></div>
+          </div>
+          <button type="button" class="show-more-btn" data-category="condiments">+ Show More Condiments</button>
+
+          <button type="submit" class="submit-btn" data-aos="fade-up">Find Recipes</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer id="footer" class="footer dark-background">
+    <div class="container text-center">
+      <p>© <span>Copyright</span> <strong class="px-1 sitename">Recipe Book</strong> <span>All Rights Reserved</span></p>
+    </div>
+  </footer>
+
+  <i class="mobile-nav-toggle d-none"></i>
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+  <div id="preloader"></div>
+
+  <script src="{{ url_for('static', filename='assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/vendor/aos/aos.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/vendor/glightbox/js/glightbox.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/vendor/swiper/swiper-bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/js/main.js') }}"></script>
+  
+  <script>
+   /* =========================================
+      1. DYNAMIC IMAGE LOADER
+      ========================================= */
+   document.addEventListener("DOMContentLoaded", function() {
+        const dynamicImages = document.querySelectorAll('.dynamic-img');
+        
+        dynamicImages.forEach(img => {
+            const label = img.closest('.box-label');
+            const input = label.previousElementSibling; 
+            if(input && input.value) {
+                // Formatting for TheMealDB: Capitalize each word
+                const ingredientName = input.value.replace(/\w\S*/g, function(txt){
+                    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+                });
+                
+                img.src = `https://www.themealdb.com/images/ingredients/${ingredientName}.png`;
+                img.alt = ingredientName;
+                img.onerror = function() {
+                    this.src = "https://placehold.co/100x100?text=No+Img";
+                    this.style.opacity = "0.5";
+                };
+            }
+        });
+
+        // Show More Logic
+        const showMoreButtons = document.querySelectorAll('.show-more-btn');
+        showMoreButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const category = this.getAttribute('data-category');
+                const hiddenItems = document.querySelectorAll(`.more-${category}`);
+                const isExpanded = this.textContent.includes('Less');
+                
+                hiddenItems.forEach(item => { item.style.display = isExpanded ? 'none' : 'block'; });
+                
+                // Toggle text
+                if (isExpanded) {
+                    this.textContent = `+ Show More ${this.textContent.split('Less ')[1]}`;
+                } else {
+                    this.textContent = `- Show Less ${this.textContent.split('More ')[1]}`;
+                }
+            });
+        });
+   });
+
+   /* =========================================
+      2. CUSTOM DROPDOWN & SEARCH
+      ========================================= */
+   document.addEventListener("DOMContentLoaded", function() {
+        const toggleBtn = document.getElementById('customMobileToggle');
+        const dropdown = document.getElementById('customMobileDropdown');
+        if (toggleBtn && dropdown) {
+            toggleBtn.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                dropdown.classList.toggle('active');
+                this.classList.toggle('bi-list'); this.classList.toggle('bi-x');
+            });
+            document.addEventListener('click', function(e) {
+                if (dropdown.classList.contains('active') && !dropdown.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    dropdown.classList.remove('active');
+                    toggleBtn.classList.remove('bi-x'); toggleBtn.classList.add('bi-list');
+                }
+            });
+        }
+   });
+
+   const form = document.getElementById("searchForm");
+   const input = document.getElementById("searchInput");
+   if(form){
+       form.addEventListener("submit", async function(e) {
+           e.preventDefault();
+           if (!form.classList.contains("expanded") || input.value.trim() === "") {
+               form.classList.add("expanded"); input.focus(); return;
+           }
+           
+           const submitBtn = document.getElementById("searchBtn");
+           const originalIcon = submitBtn.innerHTML;
+           submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+           try {
+               const response = await fetch('/submit', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ search: input.value })
+               });
+               
+               if (response.redirected) {
+                   window.location.href = response.url;
+               } else {
+                   const data = await response.json();
+                   if (data.redirect) window.location.href = data.redirect;
+                   else alert(data.message || "Recipe not found.");
+               }
+           } catch (err) { console.error(err); } 
+           finally { submitBtn.innerHTML = originalIcon; }
+       });
+
+       document.addEventListener("click", function(e) {
+           if (!form.contains(e.target) && input.value === "") form.classList.remove("expanded");
+       });
+   }
+
+   /* =========================================
+      3. INGREDIENTS SEARCH + MESSAGE DISPLAY
+      ========================================= */
+   (function() {
+    let currentPage = 0;
+    const itemsPerPage = 3;
+    let recipes = [];
+    const recipeContainer = document.getElementById("recipeContainer");
+    const msgContainer = document.getElementById("searchMessage");
+
+    document.getElementById("ingredientsForm").addEventListener("submit", async function(event) {
+        event.preventDefault();
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerText;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+        
+        try {
+            const selectedIngredients = Array.from(document.querySelectorAll('input[name="ingredients"]:checked')).map(cb => cb.value);
+            if (selectedIngredients.length === 0) throw new Error("Select at least one ingredient");
+            
+            const response = await fetch('/find_recipes', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ ingredients: selectedIngredients })
+            });
+            const result = await response.json();
+            
+            if (!result.success || !result.recipes) throw new Error(result.message || 'No recipes found');
+            
+            // Display suggestion message if exists (e.g., Apple logic)
+            if (result.message) {
+                msgContainer.style.display = "block";
+                msgContainer.innerHTML = `<i class="fa-solid fa-lightbulb"></i> ${result.message}`;
+            } else {
+                msgContainer.style.display = "none";
+            }
+
+            recipes = result.recipes;
+            document.getElementById("results").style.display = "block";
+            showPage(0);
+            document.getElementById("results").scrollIntoView({ behavior: 'smooth' });
+            
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            submitBtn.innerText = originalText;
+        }
+    });
+
+    window.showPage = function(page) {
+        recipeContainer.innerHTML = "";
+        const start = page * itemsPerPage;
+        const end = start + itemsPerPage;
+        
+        recipes.slice(start, end).forEach(recipe => {
+            const el = document.createElement("div");
+            el.className = "recipe-wrapper"; 
+            const recipeUrl = `/recipe/${recipe.html_page}`;
+            
+            el.innerHTML = `
+                <a href="${recipeUrl}" class="recipe-link">
+                    <div class="block-container">
+                        <div class="btn-back"></div>
+                        <div class="btn-front">
+                            <img src="${recipe.image}" onerror="this.src='/static/images/default.jpg';" class="recipe-image">
+                        </div>
+                    </div>
+                    <div class="recipe-name">${recipe.display_name}</div>
+                </a>`;
+            recipeContainer.appendChild(el);
+        });
+        
+        document.getElementById("prevBtn").disabled = page === 0;
+        document.getElementById("nextBtn").disabled = page >= Math.ceil(recipes.length/itemsPerPage) - 1;
+        currentPage = page;
+    }
+    
+    window.nextPage = () => showPage(currentPage + 1);
+    window.prevPage = () => showPage(currentPage - 1);
+   })();
+  </script>
+</body>
+</html>

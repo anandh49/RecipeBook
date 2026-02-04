@@ -1,337 +1,273 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
-	<!-- Required meta tags -->
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<title>Recipe Book</title>
-	<!-- Google Fonts -->
-	<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
-	<!-- main css -->
-	<link rel="stylesheet" href="static/style.css">
-	<style>
-		/* Container and Grid System */
-		.container-fluid {
-            width: 100%;
-            padding: 0;
-            margin: 0;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe Book - Login</title>
 
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-            height: 100vh;
-        }
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="static/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="static/style.css">
 
-        .col-lg-6 {
-            flex: 0 0 50%;
-            max-width: 50%;
-            height: 100%;
-            position: relative;
-        }
-
-        @media (min-width:992px) {
-            .col-lg-6 {
-                -ms-flex: 0 0 50%;
-                flex: 0 0 50%;
-                max-width: 50%;
-            }
-        }
-
-        /* Left Side Styling */
-        .banner_left {
-            background: #ff6c6c;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100%;
-            padding-top: 30px;
-        }
-
-        /* Right Side Styling */
-        .banner_right {
-            background: #fff;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-
-        /* Recipe Book Header */
-		.recipe-header {
-        font-family: 'Dancing Script', cursive;
-        font-size: 3.5rem;
-        margin: 20px 0;
-        text-align: center;
-        width: 100%;
-        position: absolute;
-        top: 0;
-        left: 360px;
-        padding: 20px 0;
-        background:transparent;
-        z-index: 1;
+  <style>
+    /* =========================================
+       1. RESET & LAYOUT
+       ========================================= */
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0; padding: 0; width: 100%; height: 100%;
+        font-family: 'Montserrat', sans-serif; overflow-x: hidden;
+        scroll-behavior: smooth;
     }
-    .recipe-header span.pink {
-        color: #000000;
+    .home_banner { width: 100%; min-height: 100vh; display: flex; flex-direction: column; }
+    .container-fluid { width: 100%; height: 100%; padding: 0; margin: 0; flex-grow: 1; }
+    .row { display: flex; flex-wrap: wrap; min-height: 100vh; margin: 0; width: 100%; }
+
+    /* =========================================
+       2. HEADER STYLES
+       ========================================= */
+    .recipe-header {
+        font-family: 'Dancing Script', cursive; font-size: 3.5rem; margin: 0; text-align: center;
+        position: absolute; top: 40px; width: 50%; left: 0; z-index: 20; pointer-events: none; line-height: 1;
     }
-    .recipe-header span.black {
-        color: #ff6b6b;
+    .recipe-quote {
+        font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 500;
+        letter-spacing: 1px; text-transform: uppercase; text-align: center; margin: 0;
+        position: absolute; top: 110px; width: 50%; left: 0; z-index: 20;
+        color: rgba(255, 255, 255, 0.9); pointer-events: none;
+    }
+    .recipe-header span.pink { color: #ffffff; }
+    .recipe-header span.black { color: #2d3436; }
+
+    /* =========================================
+       3. LEFT COLUMN (FORM) - DESKTOP DEFAULT
+       ========================================= */
+    .col-left {
+        flex: 0 0 50%; max-width: 50%;
+        background: #ce1212; /* Proper Red */
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        padding: 20px; position: relative; min-height: 100vh;
+        scroll-margin-top: 60px;
     }
 
-        /* Login Container */
+    /* White Rounded Card */
+    .login-container {
+        width: 100%; max-width: 380px; padding: 40px 30px;
+        background: white;
+        border-radius: 25px; /* Rounded Edges */
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        z-index: 10;
+    }
+
+    .login-container h2 {
+        text-align: center; margin-bottom: 30px;
+        color: #333; /* Dark text on white card */
+        font-weight: 700; font-size: 1.8rem;
+    }
+
+    .form-group { margin-bottom: 20px; }
+    .form-group label {
+        display: block; margin-bottom: 8px;
+        color: #666; /* Grey text on white card */
+        font-weight: 500; font-size: 0.95rem;
+    }
+
+    .form-group input {
+        width: 100%; padding: 12px 15px;
+        border: 2px solid #f0f0f0; border-radius: 12px;
+        font-family: 'Montserrat', sans-serif; font-size: 1rem; transition: 0.3s;
+    }
+    .form-group input:focus { border-color: #ce1212; outline: none; background: #fffcfc; }
+
+    /* Flash Messages */
+    .flash-container { width: 100%; max-width: 380px; margin-bottom: 15px; z-index: 20; }
+    .alert { border-radius: 12px; padding: 10px 15px; font-size: 0.9rem; font-weight: 600; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+    /* Buttons & Links */
+    .btn-login {
+        width: 100%; padding: 14px;
+        background-color: #ce1212; color: white;
+        border: none; border-radius: 12px; font-size: 1rem; font-weight: 600;
+        cursor: pointer; transition: all 0.3s; margin-top: 10px;
+        box-shadow: 0 4px 15px rgba(206, 18, 18, 0.4);
+    }
+    .btn-login:hover { background-color: #a50e0e; transform: translateY(-2px); }
+
+    .login-links { text-align: center; margin-top: 25px; }
+    .login-links a { color: #888; text-decoration: none; font-size: 0.9rem; transition: 0.3s; }
+    .login-links a:hover { color: #ce1212; }
+
+    /* =========================================
+       4. RIGHT COLUMN (ANIMATION)
+       ========================================= */
+    .col-right {
+        flex: 0 0 50%; max-width: 50%; background: #fff;
+        display: flex; justify-content: center; align-items: center;
+        overflow: hidden; position: relative; min-height: 100vh;
+    }
+    .orbit-system { position: relative; width: 600px; height: 600px; display: flex; justify-content: center; align-items: center; }
+    .main-cupcake { width: 280px; height: auto; position: relative; z-index: 10; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.15)); }
+    .ring {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        border-radius: 50%; border: 1px dashed rgba(206, 18, 18, 0.3); pointer-events: none;
+    }
+    .ring-1 { width: 350px; height: 350px; animation: spin-right 20s linear infinite; }
+    .ring-2 { width: 500px; height: 500px; animation: spin-left 35s linear infinite; }
+    .ring-3 { width: 650px; height: 650px; animation: spin-right 50s linear infinite; border-color: rgba(206, 18, 18, 0.15); }
+    .food-item { position: absolute; font-size: 24px; }
+    .ring-1 .item-1 { top: 0; left: 50%; transform: translate(-50%, -50%); }
+    .ring-1 .item-2 { bottom: 15%; right: 15%; }
+    .ring-2 .item-1 { top: 20%; left: 10%; }
+    .ring-2 .item-2 { bottom: 20%; right: 10%; }
+    .ring-2 .item-3 { top: 10%; right: 20%; }
+    @keyframes spin-right { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+    @keyframes spin-left { 100% { transform: translate(-50%, -50%) rotate(-360deg); } }
+
+    /* Password Toggle */
+    .password-wrapper { position: relative; }
+    .toggle-password {
+        position: absolute; top: 50%; right: 15px; transform: translateY(-50%);
+        cursor: pointer; color: #999;
+    }
+    .toggle-password:hover { color: #ce1212; }
+
+    /* =========================================
+       5. MOBILE RESPONSIVENESS
+       ========================================= */
+    @media (max-width: 991px) {
+        .row { flex-direction: column-reverse; }
+        .col-left, .col-right { flex: 0 0 100%; max-width: 100%; width: 100%; }
+
+        /* Header moves to top white section */
+        .recipe-header { width: 100%; position: relative; top: auto; background: #fff; padding: 20px 0 0 0; margin: 0; color: #000; }
+        .recipe-quote { width: 100%; position: relative; top: auto; background: #fff; color: #888; padding-bottom: 10px; margin-top: 0; }
+        .recipe-header span.pink { color: #ce1212; }
+
+        /* Right col becomes top section */
+        .col-right { min-height: 55vh; padding-bottom: 30px; }
+        .orbit-system { transform: scale(0.9); }
+
+        /* Left col (Form) slides up */
+        .col-left {
+            min-height: 60vh;
+            border-top-left-radius: 40px; border-top-right-radius: 40px;
+            margin-top: -30px; z-index: 5;
+            justify-content: flex-start;
+            padding-top: 25px; /* UPDATED: Changed from 50px to 45px to move message up 5px */
+        }
+
+        /* Mobile Form Styling - Transparent on Red */
         .login-container {
-            width: 100%;
-            max-width: 350px; /* Reduced from 400px */
-            padding: 30px; /* Reduced from 40px */
-            background: white;
-            border-radius: 20px;
-            margin-top: 150px;
-			margin-left:100px;
-            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.2);
-            border: 2px solid rgba(255, 107, 107, 0.3);
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 2;
+            box-shadow: none; padding: 0; background: transparent; width: 90%;
         }
+        .login-container h2 { color: white; margin-top: 0; }
 
-        .login-container:hover {
-            box-shadow: 0 15px 35px rgb(0, 0, 0);
-            border-color: rgb(0, 0, 0);
-        }
-		
-		.login-container h2 {
-			text-align: center;
-			margin-bottom: 25px; /* Reduced from 30px */
-			color: #333;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 600;
-            font-size: 1.8rem; /* Reduced from 2rem */
-		}
-		
-		.login-container .form-group {
-			margin-bottom: 20px; /* Reduced from 25px */
-		}
-		
-		.login-container label {
-			display: block;
-			margin-bottom: 8px; /* Reduced from 10px */
-			font-weight: 500;
-            font-family: 'Montserrat', sans-serif;
-            color: #555;
-            font-size: 0.9rem;
-		}
-		
-		.login-container input {
-			width: 100%;
-			padding: 12px; /* Reduced from 14px */
-			border: 1px solid #eee;
-			border-radius: 12px; /* More curved borders */
-			font-size: 15px; /* Slightly smaller */
-            font-family: 'Montserrat', sans-serif;
-            transition: all 0.3s;
-		}
+        /* Text becomes white on red bg */
+        .form-group label { color: rgba(255,255,255,0.9); }
+        .login-links a { color: rgba(255,255,255,0.8); }
+        .login-links a:hover { color: #fff; text-decoration: underline; }
 
-        .login-container input:focus {
-            border-color: #ff6b6b;
-            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
-            outline: none;
-        }
-		
-		.login-container button {
-			width: 100%;
-			padding: 12px; /* Reduced from 14px */
-			background-color: #ff6b6b;
-			color: white;
-			border: none;
-			border-radius: 12px; /* More curved borders */
-			font-size: 15px; /* Slightly smaller */
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 600;
-			cursor: pointer;
-			transition: all 0.3s;
-            margin-top: 8px; /* Reduced from 10px */
-		}
-		
-		.login-container button:hover {
-			background-color: #ff5252;
-            transform: translateY(-2px);
-		}
-		
-		.login-links {
-			text-align: center;
-			margin-top: 20px; /* Reduced from 25px */
-            font-family: 'Montserrat', sans-serif;
-		}
-		
-		.login-links a {
-			color: #666;
-			text-decoration: none;
-			transition: color 0.3s;
-            font-size: 0.85rem; /* Slightly smaller */
-		}
-		
-		.login-links a:hover {
-			color: #ff6b6b;
-            text-decoration: underline;
-		}
+        /* Inputs become semi-transparent white */
+        .form-group input { background: rgba(255,255,255,0.95); border: none; }
 
-        /* Cupcake Image and Animation Positioning */
-        .animation-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .face-img {
-            width: 35%;
-			left:-20%;
-            position: relative;
-            z-index: 2;
-        }
-
-        /* Planet animation adjustments for centering */
-        .round-planet {
-            position: absolute;
-            z-index: 1;
-        }
-
-        .round-planet.planet {
-            width: 540px;
-            height: 540px;
-            border-radius: 50%;
-            border: 3px solid #f9f9ff;
-        }
-
-        .round-planet.planet2 {
-            width: 430px;
-            height: 430px;
-        }
-
-        .round-planet.planet3 {
-            width: 320px;
-            height: 320px;
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 991px) {
-            .row {
-                flex-direction: column;
-            }
-            
-            .col-lg-6 {
-                flex: 0 0 100%;
-                max-width: 100%;
-                height: auto;
-            }
-
-            .banner_left {
-                padding: 100px 1rem 2rem;
-            }
-
-            .recipe-header {
-                font-size: 2.8rem;
-                padding: 15px 0;
-                position: fixed;
-                top: 0;
-                width: 100%;
-            }
-
-            .login-container {
-                padding: 25px;
-                max-width: 90%;
-                margin-top: 80px;
-            }
-
-            .face-img {
-                width: 50%;
-            }
-        }
-		.flash {
-            max-width: 100%;
-            height: auto;
-            position: absolute;
-            top:17%;
-            left:250px;
-           font-size:20px;  
-           
-            text-decoration: underline;
-            -webkit-text-fill-color:rgb(0, 0, 0);
-            border-radius:20px;
-            }
-	</style>
+        /* Button becomes white */
+        .btn-login { background: white; color: #ce1212; }
+        .btn-login:hover { background: #f8f8f8; color: #a50e0e; transform: translateY(-2px); }
+        .toggle-password { color: #ce1212; }
+        .toggle-password:hover { color: #a50e0e; }
+    }
+  </style>
 </head>
-
 <body>
-	<section class="home_banner">
-		<div class="container-fluid">
-			<div class="row">
-				<div class="col-lg-6 p-0">
-					<div class="banner_left">
-                        <h1 class="recipe-header">
-							<span class="pink">Recipe</span> <span class="black">Book</span>
-						</h1>
-						<div class="flash">
-							{% with messages = get_flashed_messages(with_categories=true) %}
-							{% if messages %}
-									<ul>
-									{% for category, message in messages %}
-									{{ message }}
-									{% endfor %}
-									</ul>
-							{% endif %}
-						{% endwith %}
-						</div>		
-						<div class="login-container">
-							<h2>Welcome Back</h2>
-							<form method="POST" action="/login">
-								<div class="form-group">
-									<label for="username">Username:</label>
-									<input type="text" id="username" name="username" required>
-								</div>
-								<div class="form-group">
-									<label for="password">Password:</label>
-									<input type="password" id="password" name="password" required>
-								</div>
-								<div>
-									<button type="submit">Login</button>
-								</div>
-							</form>
-							<div class="login-links">
-								<div class="forgot">
-									<a href="/forgot">Forgot password?</a>
-								</div>
-								<a href="/register">Don't have an account? Register here</a>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="col-lg-6 p-0">
-					<div class="banner_right">
-						<div class="animation-container">
-							<div class="round-planet planet">
-								<div class="round-planet planet2">
-									<div class="round-planet planet3">
-										<div class="shape shape1"></div>
-										<div class="shape shape2"></div>
-										<div class="shape shape3"></div>
-										<div class="shape shape4"></div>
-										<div class="shape shape5"></div>
-										<div class="shape shape6"></div>
-									</div>
-								</div>
-							</div>
-							<img class="face-img" src="static/images/home-banner.png" alt="Cupcake">
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</section>
-</body>
+    <section class="home_banner">
+        <div class="container-fluid">
+            <h1 class="recipe-header"><span class="pink">Recipe</span> <span class="black">Book</span></h1>
+            <p class="recipe-quote">Happiness is Homemade</p>
 
+            <div class="row">
+                <div class="col-left" id="redSection">
+
+                    <div class="flash-container">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                          {% if messages %}
+                            {% for category, message in messages %}
+                              <div class="alert alert-{{ category }}" role="alert">
+                                {{ message }}
+                              </div>
+                            {% endfor %}
+                          {% endif %}
+                        {% endwith %}
+                    </div>
+
+                    <div class="login-container">
+                        <h2>Welcome Back</h2>
+                        <form method="POST" action="/login">
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <div class="password-wrapper">
+                                    <input type="password" id="password" name="password" placeholder="Enter your password" required style="padding-right: 40px;">
+                                    <i class="fa-solid fa-eye toggle-password" onclick="togglePassword('password', this)"></i>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-login">Login</button>
+                        </form>
+                        <div class="login-links">
+                            <p><a href="/register">Create an account</a> | <a href="/forgot">Forgot Password?</a></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-right">
+                    <div class="orbit-system">
+                        <img class="main-cupcake" src="static/images/loginimage.png" alt="Delicious Food">
+                        <div class="ring ring-1">
+                            <div class="food-item item-1">🍩</div>
+                            <div class="food-item item-2">🍪</div>
+                        </div>
+                        <div class="ring ring-2">
+                            <div class="food-item item-1">🍕</div>
+                            <div class="food-item item-2">🍔</div>
+                            <div class="food-item item-3">🍟</div>
+                        </div>
+                        <div class="ring ring-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function togglePassword(inputId, icon) {
+            const input = document.getElementById(inputId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                input.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        }
+
+        // Auto-scroll logic for mobile (Matches Register Page)
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.innerWidth < 992) {
+                setTimeout(function() {
+                    var redSection = document.getElementById("redSection");
+                    if (redSection) {
+                        redSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 2000);
+            }
+        });
+    </script>
+</body>
 </html>
