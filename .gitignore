@@ -1,0 +1,15 @@
+# Environments
+myvenv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Databases (Optional: keep this if you want your DB to stay only on PythonAnywhere)
+*.db
+
+# OS files
+.DS_Store
+Thumbs.db
